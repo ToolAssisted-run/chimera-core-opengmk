@@ -10,6 +10,7 @@
 		"error.save_not_zip": "セーブデータは zip ではありません: %1",
 		"error.settings_not_json": "設定は JSON ではありません: %1",
 		"error.settings_not_object": "設定は JSON オブジェクトではありません。",
+		"error.unimplemented": "このゲームは %1 を呼び出しましたが、OpenGMK はまだこれを実装していません。",
 		"setting.randomseed": "乱数シード",
 		"setting.randomseed.about": "コアの乱数が始まる数。randomize() を呼ぶゲームは、お使いのコンピューターではなくこの数列からシードを取るので、同じシードと同じ入力なら同じプレイになります。マシンの一部なので、ムービーにも同じ値が必要です。",
 		"setting.starttime": "開始時計",

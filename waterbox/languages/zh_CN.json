@@ -10,6 +10,7 @@
 		"error.save_not_zip": "存档数据不是 zip：%1",
 		"error.settings_not_json": "设置不是 JSON：%1",
 		"error.settings_not_object": "设置不是 JSON 对象。",
+		"error.unimplemented": "该游戏调用了 %1，OpenGMK 尚未实现它。",
 		"setting.randomseed": "随机种子",
 		"setting.randomseed.about": "内核的随机数开始的数字。调用 randomize() 的游戏从这个序列而不是你的电脑取得种子，所以相同的种子和相同的输入会得到相同的游戏。它是机器的一部分，所以影片需要相同的值。",
 		"setting.starttime": "起始时钟",

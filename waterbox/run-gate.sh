@@ -125,7 +125,7 @@ run_wbx() { box "$wbx" "$core" "$game" "$@" 2> /dev/null; }
 run_native --frames 300 --digest-every 30 "${route[@]}" > "$work/n.out"
 run_wbx --frames 300 --digest-every 30 "${route[@]}" > "$work/w.out"
 
-tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal engine)
+tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented engine)
 for t in "${tests[@]}"; do
 	if [ "$breaking" = 1 ]; then BREAK="$t"; else BREAK=""; fi
 	case "$t" in
@@ -231,6 +231,31 @@ for t in "${tests[@]}"; do
 		[ "$breaking" = 1 ] && out_n=0
 		ok=0; [ "$out_n" -ge 1 ] && [ "$out_w" -ge 1 ] && ok=1
 		verdict refusal "$ok" "a file that is not a GameMaker 8 game is refused with its reason, in both"
+		;;
+	# ------------------------------------------------ a function OpenGMK does not have
+	unimplemented)
+		# a game that calls show_message at its tenth step; when the test is
+		# being broken, the game that calls nothing is run instead
+		said="This game called show_message, which OpenGMK does not implement yet."
+		ugame="$build/content/unimplemented.exe"
+		if [ "$breaking" = 1 ]; then "$mkgame" "$ugame" > /dev/null; else "$mkgame" "$ugame" show_message > /dev/null; fi
+		out_n="$("$native" "$ugame" --frames 30 2>&1 >/dev/null | grep -c -F "$said")"
+		out_w="$(box "$wbx" "$core" "$ugame" --frames 30 2>&1 >/dev/null | grep -c -F "$said")"
+		out_e=""
+		run="${chimera_root:+$chimera_root/build/meson-linux/chimera-run}"
+		pkg="${chimera_root:+$chimera_root/build/Cores/opengmk.chimeraCore}"
+		if [ -n "$run" ] && [ -x "$run" ] && [ -f "$pkg" ]; then
+			python3 -c 'import json,sys; n=len(json.load(open(sys.argv[1]))["input"]["buttons"]); print("\n".join("|%5d,%5d,%s|" % (4096, 4096, "." * n) for _ in range(30)))' \
+				"$here/waterbox.config" > "$work/unimplemented.movie"
+			rm -rf "$work/unimplemented.chimeraProject"
+			"$run" --new-project "$work/unimplemented.chimeraProject" "$pkg" "$ugame" "$work/unimplemented.movie" > "$work/unimplemented.make.log" 2>&1
+			box "$run" --project "$work/unimplemented.chimeraProject" "$pkg" --files "$build/content" > "$work/unimplemented.out" 2>&1
+			out_e="$(grep -c -F "chimera-run: the core stopped: " "$work/unimplemented.out")/$(grep -c -F "It said: $said" "$work/unimplemented.out")"
+		fi
+		ok=0
+		[ "$out_n" -ge 1 ] && [ "$out_w" -ge 1 ] && { [ -z "$out_e" ] || [ "$out_e" = "1/1" ]; } && ok=1
+		verdict unimplemented "$ok" "a game that calls show_message, which OpenGMK lacks, gets a sentence naming it" \
+			"native $out_n, sandbox $out_w${out_e:+, chimera-run $out_e}"
 		;;
 	# ------------------------------------------------ the package, through the engine
 	engine)

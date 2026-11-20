@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Tallennustiedot eivät ole zip: %1",
 		"error.settings_not_json": "Asetukset eivät ole JSON-muotoa: %1",
 		"error.settings_not_object": "Asetukset eivät ole JSON-olio.",
+		"error.unimplemented": "Tämä peli kutsui funktiota %1, jota OpenGMK ei vielä toteuta.",
 		"setting.randomseed": "Satunnaissiemen",
 		"setting.randomseed.about": "Luku, josta ytimen satunnaisluvut alkavat. Peli, joka kutsuu randomize(), ottaa siemenensä tästä jonosta eikä tietokoneestasi, joten sama siemen ja samat syötteet tuottavat saman pelin. Se kuuluu koneeseen, joten elokuva tarvitsee saman arvon.",
 		"setting.starttime": "Alkukello",

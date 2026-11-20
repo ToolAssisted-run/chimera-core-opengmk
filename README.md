@@ -24,7 +24,10 @@ Layout: `extern/OpenGMK` (upstream, pinned; clone with `--recursive`),
 `docs/PLAN.md` (the design and the reasoning behind every decision).
 
 The tests run on a small game this repository makes itself
-(`waterbox/tests/mkgame`), so no game is needed or downloaded. Report problems
+(`waterbox/tests/mkgame`), so no game is needed or downloaded. Only that test
+game has been run: no real GameMaker 8 game has. OpenGMK does not implement
+every GameMaker function (`show_message`, for one); a game that calls one stops
+with a sentence naming it. Report problems
 in [chimera's issues](https://github.com/ToolAssisted-run/chimera/issues).
 
 ## Using it in Chimera

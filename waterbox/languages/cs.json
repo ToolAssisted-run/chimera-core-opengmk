@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Uložená data nejsou zip: %1",
 		"error.settings_not_json": "Nastavení nejsou JSON: %1",
 		"error.settings_not_object": "Nastavení nejsou objekt JSON.",
+		"error.unimplemented": "Tato hra zavolala %1, kterou OpenGMK zatím neimplementuje.",
 		"setting.randomseed": "Náhodné semeno",
 		"setting.randomseed.about": "Číslo, od kterého začínají náhodná čísla jádra. Hra, která volá randomize(), bere semeno z této posloupnosti a ne z vašeho počítače, takže stejné semeno a stejné vstupy dají stejnou hru. Je součástí stroje, takže film potřebuje stejnou hodnotu.",
 		"setting.starttime": "Počáteční hodiny",

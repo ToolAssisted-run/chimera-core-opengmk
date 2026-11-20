@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Les dades desades no són un zip: %1",
 		"error.settings_not_json": "Els paràmetres no són JSON: %1",
 		"error.settings_not_object": "Els paràmetres no són un objecte JSON.",
+		"error.unimplemented": "Aquest joc ha cridat %1, que OpenGMK encara no implementa.",
 		"setting.randomseed": "Llavor aleatòria",
 		"setting.randomseed.about": "El nombre del qual comencen els nombres aleatoris del nucli. Un joc que crida randomize() pren la llavor d'aquesta seqüència i no del teu ordinador, de manera que la mateixa llavor i les mateixes entrades donen la mateixa partida. Forma part de la màquina, així que una pel·lícula necessita el mateix valor.",
 		"setting.starttime": "Rellotge inicial",

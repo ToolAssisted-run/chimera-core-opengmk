@@ -65,6 +65,7 @@ keyboard, the mouse, the date, `random()` and files). Nothing else is needed.
 | the tone | the sound is the same in both, then silence |
 | save data | the files written are exported, and a game started from them carries on |
 | a file that is not a game | it is refused, with its reason, in both |
+| a function OpenGMK lacks | a game that calls `show_message` stops with "This game called show_message, which OpenGMK does not implement yet.", in both and through chimera-run |
 | the engine | the package, through chimera-run, plays the route; its picture is `run-wbx`'s |
 
 Then the frontend test, which needs the package in the Chimera checkout, the
@@ -78,6 +79,8 @@ Then Chimera's contract tests on the package:
 `<chimera>/build/meson-linux/source/ui/test-packages <folder holding the package>`.
 
 ## Trying a real game
+
+Only the test game has been run so far; no real GameMaker 8 game has.
 
 ```sh
 build/wbx/run-wbx build/wbx/core.wbx /path/to/game.exe --frames 600 --digest-every 100 --screenshot 599=/tmp/last.tga

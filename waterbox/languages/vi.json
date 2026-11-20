@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Dữ liệu lưu không phải zip: %1",
 		"error.settings_not_json": "Cài đặt không phải JSON: %1",
 		"error.settings_not_object": "Cài đặt không phải một đối tượng JSON.",
+		"error.unimplemented": "Trò chơi này đã gọi %1, mà OpenGMK chưa triển khai.",
 		"setting.randomseed": "Hạt giống ngẫu nhiên",
 		"setting.randomseed.about": "Con số mà các số ngẫu nhiên của lõi bắt đầu từ đó. Trò chơi gọi randomize() lấy hạt giống từ dãy này chứ không phải từ máy tính của bạn, nên cùng hạt giống và cùng đầu vào cho ra cùng một ván chơi. Đây là một phần của máy, nên một video cần cùng giá trị.",
 		"setting.starttime": "Đồng hồ ban đầu",

@@ -10,6 +10,7 @@
 		"error.save_not_zip": "저장 데이터가 zip이 아닙니다: %1",
 		"error.settings_not_json": "설정이 JSON이 아닙니다: %1",
 		"error.settings_not_object": "설정이 JSON 객체가 아닙니다.",
+		"error.unimplemented": "이 게임이 %1을(를) 호출했지만 OpenGMK는 아직 이를 구현하지 않았습니다.",
 		"setting.randomseed": "난수 시드",
 		"setting.randomseed.about": "코어의 난수가 시작되는 숫자입니다. randomize()를 호출하는 게임은 컴퓨터가 아니라 이 수열에서 시드를 가져오므로, 같은 시드와 같은 입력이면 같은 플레이가 됩니다. 머신의 일부이므로 무비에도 같은 값이 필요합니다.",
 		"setting.starttime": "시작 시계",

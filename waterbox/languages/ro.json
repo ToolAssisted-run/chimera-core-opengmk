@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Datele salvate nu sunt un zip: %1",
 		"error.settings_not_json": "Setările nu sunt JSON: %1",
 		"error.settings_not_object": "Setările nu sunt un obiect JSON.",
+		"error.unimplemented": "Acest joc a apelat %1, pe care OpenGMK nu o implementează încă.",
 		"setting.randomseed": "Sămânță aleatorie",
 		"setting.randomseed.about": "Numărul de la care pornesc numerele aleatorii ale nucleului. Un joc care apelează randomize() își ia sămânța din acest șir și nu de la calculatorul tău, deci aceeași sămânță și aceleași intrări dau același joc. Face parte din mașină, deci un film are nevoie de aceeași valoare.",
 		"setting.starttime": "Ceas inițial",

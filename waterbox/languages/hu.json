@@ -10,6 +10,7 @@
 		"error.save_not_zip": "A mentett adatok nem zip: %1",
 		"error.settings_not_json": "A beállítások nem JSON-ok: %1",
 		"error.settings_not_object": "A beállítások nem JSON-objektum.",
+		"error.unimplemented": "Ez a játék meghívta a(z) %1 függvényt, amelyet az OpenGMK még nem valósít meg.",
 		"setting.randomseed": "Véletlen mag",
 		"setting.randomseed.about": "A szám, amelyből a mag véletlen számai indulnak. Az a játék, amely a randomize() függvényt hívja, ebből a sorozatból veszi a magját, nem a számítógépedről, így ugyanaz a mag és ugyanazok a bemenetek ugyanazt a játékot adják. A gép része, ezért a filmnek ugyanez az érték kell.",
 		"setting.starttime": "Kezdő óra",

@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Gemte data er ikke en zip: %1",
 		"error.settings_not_json": "Indstillingerne er ikke JSON: %1",
 		"error.settings_not_object": "Indstillingerne er ikke et JSON-objekt.",
+		"error.unimplemented": "Dette spil kaldte %1, som OpenGMK endnu ikke implementerer.",
 		"setting.randomseed": "Tilfældigt frø",
 		"setting.randomseed.about": "Tallet, kernens tilfældige tal starter fra. Et spil, der kalder randomize(), henter sit frø fra denne række og ikke fra din computer, så samme frø og samme input giver samme spil. Det er en del af maskinen, så en film kræver den samme værdi.",
 		"setting.starttime": "Startur",

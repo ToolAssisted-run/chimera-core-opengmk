@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Kayıt verisi bir zip değil: %1",
 		"error.settings_not_json": "Ayarlar JSON değil: %1",
 		"error.settings_not_object": "Ayarlar bir JSON nesnesi değil.",
+		"error.unimplemented": "Bu oyun, OpenGMK'nin henüz uygulamadığı %1 işlevini çağırdı.",
 		"setting.randomseed": "Rastgele tohum",
 		"setting.randomseed.about": "Çekirdeğin rastgele sayılarının başladığı sayı. randomize() çağıran bir oyun tohumunu bilgisayarınızdan değil bu diziden alır; böylece aynı tohum ve aynı girdiler aynı oyunu verir. Makinenin parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"setting.starttime": "Başlangıç saati",

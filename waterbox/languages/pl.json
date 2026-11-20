@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Dane zapisu nie są plikiem zip: %1",
 		"error.settings_not_json": "Ustawienia nie są JSON-em: %1",
 		"error.settings_not_object": "Ustawienia nie są obiektem JSON.",
+		"error.unimplemented": "Ta gra wywołała %1, czego OpenGMK jeszcze nie implementuje.",
 		"setting.randomseed": "Ziarno losowe",
 		"setting.randomseed.about": "Liczba, od której zaczynają się liczby losowe rdzenia. Gra, która wywołuje randomize(), bierze ziarno z tego ciągu, a nie z twojego komputera, więc to samo ziarno i te same wejścia dają tę samą grę. Jest częścią maszyny, więc film wymaga tej samej wartości.",
 		"setting.starttime": "Zegar początkowy",

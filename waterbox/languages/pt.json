@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Os dados salvos não são um zip: %1",
 		"error.settings_not_json": "As configurações não são JSON: %1",
 		"error.settings_not_object": "As configurações não são um objeto JSON.",
+		"error.unimplemented": "Este jogo chamou %1, que o OpenGMK ainda não implementa.",
 		"setting.randomseed": "Semente aleatória",
 		"setting.randomseed.about": "O número de onde partem os números aleatórios do núcleo. Um jogo que chama randomize() toma a semente desta sequência e não do seu computador, então a mesma semente e as mesmas entradas dão o mesmo jogo. Faz parte da máquina, então um filme precisa do mesmo valor.",
 		"setting.starttime": "Relógio inicial",

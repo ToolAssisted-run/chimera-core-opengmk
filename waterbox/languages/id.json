@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Data simpanan bukan zip: %1",
 		"error.settings_not_json": "Pengaturan bukan JSON: %1",
 		"error.settings_not_object": "Pengaturan bukan objek JSON.",
+		"error.unimplemented": "Game ini memanggil %1, yang belum diimplementasikan OpenGMK.",
 		"setting.randomseed": "Benih acak",
 		"setting.randomseed.about": "Angka tempat bilangan acak inti ini bermula. Game yang memanggil randomize() mengambil benihnya dari urutan ini dan bukan dari komputer Anda, sehingga benih dan masukan yang sama menghasilkan permainan yang sama. Ini bagian dari mesin, jadi sebuah film membutuhkan nilai yang sama.",
 		"setting.starttime": "Jam awal",

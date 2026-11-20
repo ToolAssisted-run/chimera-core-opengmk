@@ -10,6 +10,7 @@
 		"error.save_not_zip": "Die Speicherdaten sind kein Zip: %1",
 		"error.settings_not_json": "Die Einstellungen sind kein JSON: %1",
 		"error.settings_not_object": "Die Einstellungen sind kein JSON-Objekt.",
+		"error.unimplemented": "Dieses Spiel hat %1 aufgerufen, was OpenGMK noch nicht umsetzt.",
 		"setting.randomseed": "Zufallswert",
 		"setting.randomseed.about": "Die Zahl, von der die Zufallszahlen des Kerns ausgehen. Ein Spiel, das randomize() aufruft, nimmt seinen Wert aus dieser Folge und nicht von Ihrem Computer, sodass derselbe Wert und dieselben Eingaben dasselbe Spiel ergeben. Er gehört zur Maschine, ein Film braucht also denselben Wert.",
 		"setting.starttime": "Startuhr",

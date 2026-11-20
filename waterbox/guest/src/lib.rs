@@ -173,6 +173,37 @@ fn say(key: &str, args: &[&str]) -> String {
     out
 }
 
+/// The English of a text of languages/en.json, its %1 filled in. The sandbox's
+/// last words for a stop are one plain line of English: the window shows what
+/// the machine said as it is, and does not look it up in the package's tables.
+fn english(key: &str, arg: &str) -> String {
+    let table: Value = serde_json::from_str(include_str!("../../languages/en.json")).unwrap_or(Value::Null);
+    match table["texts"][key].as_str() {
+        Some(text) => text.replace("%1", arg),
+        None => format!("{key} {arg}"),
+    }
+}
+
+/// OpenGMK does not implement every GameMaker function: where it has none it
+/// panics with "Called unimplemented kernel function <name>". The panic's own
+/// text (a source file and a line of Rust) means nothing to a player, so the
+/// hook says what happened in one sentence naming the function. The machine
+/// then stops as any panic stops it. Any other panic keeps its own text.
+fn say_unimplemented_functions() {
+    const MARK: &str = "Called unimplemented kernel function ";
+    let previous = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let text = info.to_string();
+        if let Some(at) = text.find(MARK) {
+            let name: String =
+                text[at + MARK.len()..].chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_').collect();
+            eprintln!("{}", english("error.unimplemented", &name));
+        } else {
+            previous(info);
+        }
+    }));
+}
+
 fn fail(why: String) -> i32 {
     eprintln!("opengmk core: {why}");
     core().load_error = CString::new(why.replace('\0', " ")).unwrap().into_bytes_with_nul();
@@ -291,6 +322,7 @@ fn slot_first(id: &str) -> Option<String> {
 
 #[no_mangle]
 pub extern "C" fn Init() -> i32 {
+    say_unimplemented_functions();
     let settings = match read_mount("settings")
         .map(|b| String::from_utf8_lossy(&b).into_owned())
         .and_then(|s| Settings::parse(&s))

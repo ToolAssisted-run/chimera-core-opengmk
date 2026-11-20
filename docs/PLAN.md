@@ -95,19 +95,57 @@ it. A step is as long as the room's speed makes it (`GetVsyncNumerator`).
 - The same real game has not been run (none whose licence allows it was
   found); see "What was proved" below.
 
+## A function OpenGMK does not have (2026-11-20)
+
+OpenGMK does not implement every GameMaker function: 264 of them (`show_message`
+for one) are stubs that panic with "Called unimplemented kernel function
+<name>". Before, the core stopped with that panic's text, a Rust source file and
+a line number. Decided by the owner on 2026-11-20: the person gets a plain
+sentence naming the function, "This game called show_message, which OpenGMK does
+not implement yet."
+
+- The core installs a panic hook when it starts (`say_unimplemented_functions`
+  in `guest/src/lib.rs`). For that one panic it writes the sentence, taken from
+  `languages/en.json` (`error.unimplemented`), as the machine's last words and
+  nothing else; any other panic keeps its own text. The machine then stops as
+  any panic stops it.
+- Chimera shows what a stopped machine said: "the core stopped: the core
+  aborted. It said: This game called show_message, which OpenGMK does not
+  implement yet." The game's stopped step is not played, and the person can go
+  back to an earlier state as after any stop.
+- The text exists in all 26 tables Chimera has (`error.unimplemented`, in
+  `waterbox/i18n/texts.py`; `write-languages.py` writes the files). What the
+  window shows for a stopped machine is the machine's own words, which Chimera
+  does not look up in the tables (it does for a game that fails to start), so
+  today the sentence shows in English in every language. A later change in
+  Chimera that puts a stop's reason through the tables would show the
+  translations; the core would then write the key and its argument instead.
+  Chimera was not changed for this.
+- The test script has a test for it: `mkgame <exe> show_message` makes a game
+  that calls `show_message` at its tenth step; the native reference, the
+  sandbox and chimera-run (the package in a project) each must print the
+  sentence. Broken on purpose, the test runs the game that calls nothing and
+  fails.
+- Not covered: the six other places OpenGMK stops with `todo!` (reading or
+  setting `keyboard_lastchar` and `keyboard_string`, and the functions
+  `keyboard_key_press` and `keyboard_key_release`), which keep the panic's text.
+- Only the test game made by this repository's own tests was run. No real
+  GameMaker 8 game was run: which functions real games call that OpenGMK lacks
+  is not known. The owner chose to publish the core as tested on 2026-11-20.
+
 ## What was proved (2026-11-20)
 
 On the test game (a 320x240 room at 30 steps a second: a ball, text, shapes,
 a tone, a save file), on Linux, with a build of Chimera made the same day:
 
-- The test script, `run-gate.sh -r <chimera>`: 13 of 13 pass (table in
+- The test script, `run-gate.sh -r <chimera>`: 14 of 14 pass (table in
   BUILDING.md). Native and sandbox print the same clock, picture and sound
   hashes at every thirtieth of 300 steps on a route of keys and the mouse; a
   savestate saved and loaded before every step, and the state carried to a new
   process half way, change nothing; the host stalling 700 ms twice changes
   nothing; a poke of the score through "Game State" reaches the game in both.
-- `run-gate.sh -b`: every one of those tests fails when broken on purpose (12
-  of 12; the engine test is not run in that mode). The first version of the
+- `run-gate.sh -b`: every one of those tests fails when broken on purpose (13
+  of 13; the engine test is not run in that mode). The first version of the
   breaking mode let three tests pass because the baseline was broken too; the
   baseline is now made once, unbroken.
 - `waterbox/tests/run-frontend.sh`: the package played through chimera-run and
@@ -131,8 +169,8 @@ a tone, a save file), on Linux, with a build of Chimera made the same day:
   claim above is about the test game. What a real game would test that this
   one does not: sprites and backgrounds (textures through softpipe), surfaces,
   3D (`d3d_*`), particles, paths, timelines, views, room transitions, mp3 and
-  longer sounds, and a GML function OpenGMK has not implemented (upstream
-  panics there, and the core stops with the panic's message).
+  longer sounds, and a GML function OpenGMK has not implemented (the core
+  stops there and says which function; see "A function OpenGMK does not have").
 - **Windows and macOS.** The package is the same file; it was run only on
   Linux. (Chimera and miniBox were not changed, so there is nothing for the
   Windows build to compile.)

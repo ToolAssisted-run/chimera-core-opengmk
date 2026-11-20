@@ -10,6 +10,7 @@
 		"error.save_not_zip": "De opslagdata zijn geen zip: %1",
 		"error.settings_not_json": "De instellingen zijn geen JSON: %1",
 		"error.settings_not_object": "De instellingen zijn geen JSON-object.",
+		"error.unimplemented": "Deze game riep %1 aan, wat OpenGMK nog niet implementeert.",
 		"setting.randomseed": "Willekeurige seed",
 		"setting.randomseed.about": "Het getal waarmee de willekeurige getallen van de kern beginnen. Een spel dat randomize() aanroept, haalt zijn seed uit deze reeks en niet van je computer, zodat dezelfde seed en dezelfde invoer hetzelfde spel geven. Het hoort bij de machine, dus een film heeft dezelfde waarde nodig.",
 		"setting.starttime": "Startklok",

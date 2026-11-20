@@ -200,7 +200,7 @@ fn help() -> Vec<u8> {
 }
 
 /// The part of the data GameMaker scrambles with a table of its own.
-fn data_block() -> Vec<u8> {
+fn data_block(calls: &Option<String>) -> Vec<u8> {
     let mut d = Vec::new();
     d.write_u32::<LE>(0).unwrap(); // no garbage words
     d.write_u32::<LE>(1).unwrap(); // pro
@@ -233,7 +233,11 @@ fn data_block() -> Vec<u8> {
     list(&mut d, 800, &[]); // timelines
     let mut events: Vec<Vec<(u32, Vec<CodeAction>)>> = (0..12).map(|_| Vec::new()).collect();
     events[0] = vec![(0, vec![code(CREATE)])];
-    events[3] = vec![(0, vec![code(STEP)])];
+    let step = match calls {
+        Some(name) => format!("{STEP}\nif (ang == 40) {name}(\"hello\");\n"),
+        None => STEP.to_string(),
+    };
+    events[3] = vec![(0, vec![code(&step)])];
     events[8] = vec![(0, vec![code(DRAW)])];
     let obj = Object {
         name: pas("obj_ball"),
@@ -346,7 +350,12 @@ fn crc32_table_free(data: &[u8]) -> u32 {
 }
 
 fn main() {
-    let out = std::env::args().nth(1).expect("usage: mkgame OUT.exe");
+    let mut args = std::env::args().skip(1);
+    let out = args.next().expect("usage: mkgame OUT.exe [FUNCTION]");
+    // A second argument names a GameMaker function the game calls at its
+    // tenth step, to test what the core says about one OpenGMK has not
+    // implemented (show_message, for one).
+    let calls = args.next();
     let mut exe = vec![0u8; 3_800_004];
     // MZ, and a PE header with one section
     exe[0] = b'M';
@@ -405,7 +414,7 @@ fn main() {
     tail.write_u32::<LE>(0).unwrap(); // no garbage before the table
     tail.write_u32::<LE>(0).unwrap(); // and none after
     tail.extend_from_slice(&table);
-    let block = data_block();
+    let block = data_block(&calls);
     tail.write_u32::<LE>(block.len() as u32).unwrap();
     tail.extend_from_slice(&scramble(&block, &table));
     while tail.len() % 4 != 0 {
