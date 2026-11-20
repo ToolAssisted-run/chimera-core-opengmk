@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 no és una hora d'inici que aquest nucli accepti.",
+		"error.bad_game": "No s'ha pogut llegir el fitxer com a joc de GameMaker 8: %1",
+		"error.bad_seed": "%1 no és una llavor aleatòria que aquest nucli accepti.",
+		"error.launch": "El joc no s'ha pogut iniciar: %1",
+		"error.no_file": "Cap joc és al projecte.",
+		"error.not_read": "No s'ha pogut llegir %1: %2",
+		"error.save_entry": "No s'ha pogut llegir %1 de les dades desades: %2",
+		"error.save_not_zip": "Les dades desades no són un zip: %1",
+		"error.settings_not_json": "Els paràmetres no són JSON: %1",
+		"error.settings_not_object": "Els paràmetres no són un objecte JSON.",
+		"setting.randomseed": "Llavor aleatòria",
+		"setting.randomseed.about": "El nombre del qual comencen els nombres aleatoris del nucli. Un joc que crida randomize() pren la llavor d'aquesta seqüència i no del teu ordinador, de manera que la mateixa llavor i les mateixes entrades donen la mateixa partida. Forma part de la màquina, així que una pel·lícula necessita el mateix valor.",
+		"setting.starttime": "Rellotge inicial",
+		"setting.starttime.about": "La data i l'hora que el joc llegeix en començar, en UTC. Les funcions de data i hora de GameMaker en responen, i després avança amb el joc, mai amb el teu ordinador. Per defecte és l'u de gener de 2010. Forma part de la màquina, així que una pel·lícula necessita el mateix valor.",
+		"slot.game": "Joc",
+		"slot.game.help": "Un joc fet amb GameMaker 8.0 o 8.1: l'.exe que va publicar el seu autor. Els jocs fets amb GameMaker Studio o posterior no funcionen aquí.",
+		"slot.savedata": "Dades desades",
+		"slot.savedata.help": "El que el joc ja va desar, tal com ho va escriure Emulador > Exporta les dades desades...: un .zip dels fitxers que el joc va escriure. Es posen on el joc troba els seus fitxers abans que comenci."
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1, bu çekirdeğin kabul ettiği bir başlangıç saati değil.",
+		"error.bad_game": "Dosya bir GameMaker 8 oyunu olarak okunamadı: %1",
+		"error.bad_seed": "%1, bu çekirdeğin kabul ettiği bir rastgele tohum değil.",
+		"error.launch": "Oyun başlatılamadı: %1",
+		"error.no_file": "Projede oyun yok.",
+		"error.not_read": "%1 okunamadı: %2",
+		"error.save_entry": "Kayıt verisinin %1 öğesi okunamadı: %2",
+		"error.save_not_zip": "Kayıt verisi bir zip değil: %1",
+		"error.settings_not_json": "Ayarlar JSON değil: %1",
+		"error.settings_not_object": "Ayarlar bir JSON nesnesi değil.",
+		"setting.randomseed": "Rastgele tohum",
+		"setting.randomseed.about": "Çekirdeğin rastgele sayılarının başladığı sayı. randomize() çağıran bir oyun tohumunu bilgisayarınızdan değil bu diziden alır; böylece aynı tohum ve aynı girdiler aynı oyunu verir. Makinenin parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
+		"setting.starttime": "Başlangıç saati",
+		"setting.starttime.about": "Oyunun başlarken okuduğu tarih ve saat, UTC olarak. GameMaker'ın tarih ve saat işlevleri bundan yanıt verir, sonra saat oyunla birlikte ilerler, bilgisayarınızla asla. Varsayılan 1 Ocak 2010'dur. Makinenin parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
+		"slot.game": "Oyun",
+		"slot.game.help": "GameMaker 8.0 veya 8.1 ile yapılmış bir oyun: yapımcısının yayımladığı .exe. GameMaker Studio veya daha yenisiyle yapılan oyunlar burada çalışmaz.",
+		"slot.savedata": "Kayıt verisi",
+		"slot.savedata.help": "Oyunun daha önce kaydettiği, Emülatör > Kayıt verisini dışa aktar... komutunun yazdığı biçimde: oyunun yazdığı dosyaların bir .zip'i. Başlamadan önce oyunun dosyalarını bulduğu yere konur."
+	}
+}

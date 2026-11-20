@@ -1,0 +1,36 @@
+diff --git a/gm8exe/Cargo.toml b/gm8exe/Cargo.toml
+index 56d25ae7..c78998f6 100644
+--- a/gm8exe/Cargo.toml
++++ b/gm8exe/Cargo.toml
+@@ -9,4 +9,3 @@ rust-version = "1.77"
+ [dependencies]
+ byteorder = "1.5"
+ flate2 = { version = "1.1", features = ["rust_backend"] }
+-rayon = "1.10.0"
+diff --git a/gm8exe/src/reader.rs b/gm8exe/src/reader.rs
+index cbefb67f..da02f900 100644
+--- a/gm8exe/src/reader.rs
++++ b/gm8exe/src/reader.rs
+@@ -7,7 +7,6 @@ use crate::{
+ };
+ use byteorder::{ReadBytesExt, LE};
+ use flate2::bufread::ZlibDecoder;
+-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+ use std::{
+     fmt::{self, Display},
+     io::{self, Read, Seek, SeekFrom},
+@@ -454,11 +453,9 @@ where
+             }
+         };
+ 
+-        if multithread {
+-            get_asset_refs(src)?.par_iter().copied().map(to_asset).collect::<Result<Vec<_>, ReaderError>>()
+-        } else {
+-            get_asset_refs(src)?.iter().copied().map(to_asset).collect::<Result<Vec<_>, ReaderError>>()
+-        }
++        // (upstream decodes the assets on several threads when asked; a machine has one)
++        let _ = multithread;
++        get_asset_refs(src)?.iter().copied().map(to_asset).collect::<Result<Vec<_>, ReaderError>>()
+     }
+ 
+     #[inline]

@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 ist keine Startzeit, die dieser Kern annimmt.",
+		"error.bad_game": "Die Datei konnte nicht als GameMaker-8-Spiel gelesen werden: %1",
+		"error.bad_seed": "%1 ist kein Zufallswert, den dieser Kern annimmt.",
+		"error.launch": "Das Spiel konnte nicht starten: %1",
+		"error.no_file": "Das Projekt enthält kein Spiel.",
+		"error.not_read": "%1 konnte nicht gelesen werden: %2",
+		"error.save_entry": "%1 aus den Speicherdaten konnte nicht gelesen werden: %2",
+		"error.save_not_zip": "Die Speicherdaten sind kein Zip: %1",
+		"error.settings_not_json": "Die Einstellungen sind kein JSON: %1",
+		"error.settings_not_object": "Die Einstellungen sind kein JSON-Objekt.",
+		"setting.randomseed": "Zufallswert",
+		"setting.randomseed.about": "Die Zahl, von der die Zufallszahlen des Kerns ausgehen. Ein Spiel, das randomize() aufruft, nimmt seinen Wert aus dieser Folge und nicht von Ihrem Computer, sodass derselbe Wert und dieselben Eingaben dasselbe Spiel ergeben. Er gehört zur Maschine, ein Film braucht also denselben Wert.",
+		"setting.starttime": "Startuhr",
+		"setting.starttime.about": "Datum und Uhrzeit, die das Spiel beim Start liest, in UTC. Die Datums- und Zeitfunktionen von GameMaker antworten daraus, und sie läuft dann mit dem Spiel weiter, nie mit Ihrem Computer. Standard ist der 1. Januar 2010. Sie gehört zur Maschine, ein Film braucht also denselben Wert.",
+		"slot.game": "Spiel",
+		"slot.game.help": "Ein mit GameMaker 8.0 oder 8.1 gemachtes Spiel: die .exe, die sein Autor veröffentlicht hat. Mit GameMaker Studio oder neuer gemachte Spiele laufen hier nicht.",
+		"slot.savedata": "Speicherdaten",
+		"slot.savedata.help": "Was das Spiel schon gespeichert hat, so wie Emulator > Speicherdaten exportieren... es geschrieben hat: ein .zip der Dateien, die das Spiel geschrieben hat. Sie werden vor dem Start dorthin gelegt, wo das Spiel seine Dateien findet."
+	}
+}

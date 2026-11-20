@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 bukan waktu mulai yang diterima inti ini.",
+		"error.bad_game": "Berkas tidak dapat dibaca sebagai game GameMaker 8: %1",
+		"error.bad_seed": "%1 bukan benih acak yang diterima inti ini.",
+		"error.launch": "Game tidak dapat dimulai: %1",
+		"error.no_file": "Tidak ada game di dalam proyek.",
+		"error.not_read": "%1 tidak dapat dibaca: %2",
+		"error.save_entry": "%1 dari data simpanan tidak dapat dibaca: %2",
+		"error.save_not_zip": "Data simpanan bukan zip: %1",
+		"error.settings_not_json": "Pengaturan bukan JSON: %1",
+		"error.settings_not_object": "Pengaturan bukan objek JSON.",
+		"setting.randomseed": "Benih acak",
+		"setting.randomseed.about": "Angka tempat bilangan acak inti ini bermula. Game yang memanggil randomize() mengambil benihnya dari urutan ini dan bukan dari komputer Anda, sehingga benih dan masukan yang sama menghasilkan permainan yang sama. Ini bagian dari mesin, jadi sebuah film membutuhkan nilai yang sama.",
+		"setting.starttime": "Jam awal",
+		"setting.starttime.about": "Tanggal dan waktu yang dibaca game saat mulai, dalam UTC. Fungsi tanggal dan waktu GameMaker menjawab dari sini, lalu berjalan bersama game, tidak pernah bersama komputer Anda. Bawaannya 1 Januari 2010. Ini bagian dari mesin, jadi sebuah film membutuhkan nilai yang sama.",
+		"slot.game": "Game",
+		"slot.game.help": "Game buatan GameMaker 8.0 atau 8.1: berkas .exe yang diterbitkan pembuatnya. Game buatan GameMaker Studio atau yang lebih baru tidak berjalan di sini.",
+		"slot.savedata": "Data simpanan",
+		"slot.savedata.help": "Apa yang sudah disimpan game, seperti yang ditulis Emulator > Ekspor data simpanan...: sebuah .zip berisi berkas yang ditulis game. Berkas itu diletakkan di tempat game menemukan berkasnya sebelum dimulai."
+	}
+}

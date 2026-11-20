@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 is not a start time this core takes.",
+		"error.bad_game": "The file could not be read as a GameMaker 8 game: %1",
+		"error.bad_seed": "%1 is not a random seed this core takes.",
+		"error.launch": "The game could not start: %1",
+		"error.no_file": "No game is in the project.",
+		"error.not_read": "%1 could not be read: %2",
+		"error.save_entry": "The save data's %1 could not be read: %2",
+		"error.save_not_zip": "The save data is not a zip: %1",
+		"error.settings_not_json": "The settings are not JSON: %1",
+		"error.settings_not_object": "The settings are not a JSON object.",
+		"setting.randomseed": "Random seed",
+		"setting.randomseed.about": "The number the core's random numbers start from. A game that calls randomize() takes its seed from this sequence and not from your computer, so the same seed and the same inputs give the same game. It is part of the machine, so a movie needs the same value.",
+		"setting.starttime": "Starting Clock",
+		"setting.starttime.about": "The date and time the game reads when it starts, in UTC. GameMaker's date and time functions answer from it, and it then runs on with the game, never with your computer. The default is the first of January 2010. It is part of the machine, so a movie needs the same value.",
+		"slot.game": "Game",
+		"slot.game.help": "A game made with GameMaker 8.0 or 8.1: the .exe its maker published. Games made with GameMaker Studio or later do not run here.",
+		"slot.savedata": "Save data",
+		"slot.savedata.help": "What the game already saved, as Emulator > Export Save Data... wrote it: a .zip of the files the game wrote. They are put where the game finds its files before it starts."
+	}
+}

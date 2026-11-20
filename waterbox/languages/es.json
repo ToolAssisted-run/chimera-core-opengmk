@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 no es una hora de inicio que este núcleo acepte.",
+		"error.bad_game": "No se pudo leer el archivo como un juego de GameMaker 8: %1",
+		"error.bad_seed": "%1 no es una semilla aleatoria que este núcleo acepte.",
+		"error.launch": "El juego no pudo iniciarse: %1",
+		"error.no_file": "No hay ningún juego en el proyecto.",
+		"error.not_read": "No se pudo leer %1: %2",
+		"error.save_entry": "No se pudo leer %1 de los datos guardados: %2",
+		"error.save_not_zip": "Los datos guardados no son un zip: %1",
+		"error.settings_not_json": "Los ajustes no son JSON: %1",
+		"error.settings_not_object": "Los ajustes no son un objeto JSON.",
+		"setting.randomseed": "Semilla aleatoria",
+		"setting.randomseed.about": "El número desde el que parten los números aleatorios del núcleo. Un juego que llama a randomize() toma su semilla de esta secuencia y no de tu ordenador, así que la misma semilla y las mismas entradas dan la misma partida. Forma parte de la máquina, así que una película necesita el mismo valor.",
+		"setting.starttime": "Reloj inicial",
+		"setting.starttime.about": "La fecha y la hora que el juego lee al empezar, en UTC. Las funciones de fecha y hora de GameMaker responden desde ahí, y luego avanza con el juego, nunca con tu ordenador. Por defecto es el 1 de enero de 2010. Forma parte de la máquina, así que una película necesita el mismo valor.",
+		"slot.game": "Juego",
+		"slot.game.help": "Un juego hecho con GameMaker 8.0 u 8.1: el .exe que publicó su autor. Los juegos hechos con GameMaker Studio o posterior no funcionan aquí.",
+		"slot.savedata": "Datos guardados",
+		"slot.savedata.help": "Lo que el juego ya guardó, tal como lo escribió Emulador > Exportar datos guardados...: un .zip de los archivos que el juego escribió. Se ponen donde el juego encuentra sus archivos antes de empezar."
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 není počáteční čas, který toto jádro přijímá.",
+		"error.bad_game": "Soubor nešlo přečíst jako hru GameMaker 8: %1",
+		"error.bad_seed": "%1 není náhodné semeno, které toto jádro přijímá.",
+		"error.launch": "Hru se nepodařilo spustit: %1",
+		"error.no_file": "V projektu není žádná hra.",
+		"error.not_read": "Soubor %1 nešlo přečíst: %2",
+		"error.save_entry": "Soubor %1 z uložených dat nešlo přečíst: %2",
+		"error.save_not_zip": "Uložená data nejsou zip: %1",
+		"error.settings_not_json": "Nastavení nejsou JSON: %1",
+		"error.settings_not_object": "Nastavení nejsou objekt JSON.",
+		"setting.randomseed": "Náhodné semeno",
+		"setting.randomseed.about": "Číslo, od kterého začínají náhodná čísla jádra. Hra, která volá randomize(), bere semeno z této posloupnosti a ne z vašeho počítače, takže stejné semeno a stejné vstupy dají stejnou hru. Je součástí stroje, takže film potřebuje stejnou hodnotu.",
+		"setting.starttime": "Počáteční hodiny",
+		"setting.starttime.about": "Datum a čas, které hra čte při spuštění, v UTC. Odpovídají z nich funkce data a času GameMakeru a pak běží s hrou, nikdy s vaším počítačem. Výchozí je 1. leden 2010. Je součástí stroje, takže film potřebuje stejnou hodnotu.",
+		"slot.game": "Hra",
+		"slot.game.help": "Hra vytvořená v GameMakeru 8.0 nebo 8.1: soubor .exe, který vydal její autor. Hry vytvořené v GameMaker Studio nebo novějším zde nefungují.",
+		"slot.savedata": "Uložená data",
+		"slot.savedata.help": "To, co hra už uložila, tak jak to zapsalo Emulátor > Exportovat uložená data...: zip souborů, které hra zapsala. Před spuštěním se dají tam, kde hra své soubory hledá."
+	}
+}

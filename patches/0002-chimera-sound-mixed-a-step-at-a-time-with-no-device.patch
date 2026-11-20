@@ -1,0 +1,1648 @@
+diff --git a/chimera-shims/udon/Cargo.toml b/chimera-shims/udon/Cargo.toml
+new file mode 100644
+index 00000000..0a3201e2
+--- /dev/null
++++ b/chimera-shims/udon/Cargo.toml
+@@ -0,0 +1,15 @@
++[package]
++name = "udon"
++version = "0.0.1"
++authors = ["Adam <classygopher@gmail.com>"]
++edition = "2018"
++description = "udon (https://github.com/Adamcake/udon) without its audio devices: the sources, mixer and decoders only, for Chimera's core"
++license = "GPL-2.0-only"
++
++[features]
++default = []
++wav = []
++serde-derives = ["serde"]
++
++[dependencies]
++serde = { version = "1.0", features = ["derive", "rc"], optional = true }
+diff --git a/chimera-shims/udon/LICENSE b/chimera-shims/udon/LICENSE
+new file mode 100644
+index 00000000..f433b1a5
+--- /dev/null
++++ b/chimera-shims/udon/LICENSE
+@@ -0,0 +1,177 @@
++
++                                 Apache License
++                           Version 2.0, January 2004
++                        http://www.apache.org/licenses/
++
++   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
++
++   1. Definitions.
++
++      "License" shall mean the terms and conditions for use, reproduction,
++      and distribution as defined by Sections 1 through 9 of this document.
++
++      "Licensor" shall mean the copyright owner or entity authorized by
++      the copyright owner that is granting the License.
++
++      "Legal Entity" shall mean the union of the acting entity and all
++      other entities that control, are controlled by, or are under common
++      control with that entity. For the purposes of this definition,
++      "control" means (i) the power, direct or indirect, to cause the
++      direction or management of such entity, whether by contract or
++      otherwise, or (ii) ownership of fifty percent (50%) or more of the
++      outstanding shares, or (iii) beneficial ownership of such entity.
++
++      "You" (or "Your") shall mean an individual or Legal Entity
++      exercising permissions granted by this License.
++
++      "Source" form shall mean the preferred form for making modifications,
++      including but not limited to software source code, documentation
++      source, and configuration files.
++
++      "Object" form shall mean any form resulting from mechanical
++      transformation or translation of a Source form, including but
++      not limited to compiled object code, generated documentation,
++      and conversions to other media types.
++
++      "Work" shall mean the work of authorship, whether in Source or
++      Object form, made available under the License, as indicated by a
++      copyright notice that is included in or attached to the work
++      (an example is provided in the Appendix below).
++
++      "Derivative Works" shall mean any work, whether in Source or Object
++      form, that is based on (or derived from) the Work and for which the
++      editorial revisions, annotations, elaborations, or other modifications
++      represent, as a whole, an original work of authorship. For the purposes
++      of this License, Derivative Works shall not include works that remain
++      separable from, or merely link (or bind by name) to the interfaces of,
++      the Work and Derivative Works thereof.
++
++      "Contribution" shall mean any work of authorship, including
++      the original version of the Work and any modifications or additions
++      to that Work or Derivative Works thereof, that is intentionally
++      submitted to Licensor for inclusion in the Work by the copyright owner
++      or by an individual or Legal Entity authorized to submit on behalf of
++      the copyright owner. For the purposes of this definition, "submitted"
++      means any form of electronic, verbal, or written communication sent
++      to the Licensor or its representatives, including but not limited to
++      communication on electronic mailing lists, source code control systems,
++      and issue tracking systems that are managed by, or on behalf of, the
++      Licensor for the purpose of discussing and improving the Work, but
++      excluding communication that is conspicuously marked or otherwise
++      designated in writing by the copyright owner as "Not a Contribution."
++
++      "Contributor" shall mean Licensor and any individual or Legal Entity
++      on behalf of whom a Contribution has been received by Licensor and
++      subsequently incorporated within the Work.
++
++   2. Grant of Copyright License. Subject to the terms and conditions of
++      this License, each Contributor hereby grants to You a perpetual,
++      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++      copyright license to reproduce, prepare Derivative Works of,
++      publicly display, publicly perform, sublicense, and distribute the
++      Work and such Derivative Works in Source or Object form.
++
++   3. Grant of Patent License. Subject to the terms and conditions of
++      this License, each Contributor hereby grants to You a perpetual,
++      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
++      (except as stated in this section) patent license to make, have made,
++      use, offer to sell, sell, import, and otherwise transfer the Work,
++      where such license applies only to those patent claims licensable
++      by such Contributor that are necessarily infringed by their
++      Contribution(s) alone or by combination of their Contribution(s)
++      with the Work to which such Contribution(s) was submitted. If You
++      institute patent litigation against any entity (including a
++      cross-claim or counterclaim in a lawsuit) alleging that the Work
++      or a Contribution incorporated within the Work constitutes direct
++      or contributory patent infringement, then any patent licenses
++      granted to You under this License for that Work shall terminate
++      as of the date such litigation is filed.
++
++   4. Redistribution. You may reproduce and distribute copies of the
++      Work or Derivative Works thereof in any medium, with or without
++      modifications, and in Source or Object form, provided that You
++      meet the following conditions:
++
++      (a) You must give any other recipients of the Work or
++          Derivative Works a copy of this License; and
++
++      (b) You must cause any modified files to carry prominent notices
++          stating that You changed the files; and
++
++      (c) You must retain, in the Source form of any Derivative Works
++          that You distribute, all copyright, patent, trademark, and
++          attribution notices from the Source form of the Work,
++          excluding those notices that do not pertain to any part of
++          the Derivative Works; and
++
++      (d) If the Work includes a "NOTICE" text file as part of its
++          distribution, then any Derivative Works that You distribute must
++          include a readable copy of the attribution notices contained
++          within such NOTICE file, excluding those notices that do not
++          pertain to any part of the Derivative Works, in at least one
++          of the following places: within a NOTICE text file distributed
++          as part of the Derivative Works; within the Source form or
++          documentation, if provided along with the Derivative Works; or,
++          within a display generated by the Derivative Works, if and
++          wherever such third-party notices normally appear. The contents
++          of the NOTICE file are for informational purposes only and
++          do not modify the License. You may add Your own attribution
++          notices within Derivative Works that You distribute, alongside
++          or as an addendum to the NOTICE text from the Work, provided
++          that such additional attribution notices cannot be construed
++          as modifying the License.
++
++      You may add Your own copyright statement to Your modifications and
++      may provide additional or different license terms and conditions
++      for use, reproduction, or distribution of Your modifications, or
++      for any such Derivative Works as a whole, provided Your use,
++      reproduction, and distribution of the Work otherwise complies with
++      the conditions stated in this License.
++
++   5. Submission of Contributions. Unless You explicitly state otherwise,
++      any Contribution intentionally submitted for inclusion in the Work
++      by You to the Licensor shall be under the terms and conditions of
++      this License, without any additional terms or conditions.
++      Notwithstanding the above, nothing herein shall supersede or modify
++      the terms of any separate license agreement you may have executed
++      with Licensor regarding such Contributions.
++
++   6. Trademarks. This License does not grant permission to use the trade
++      names, trademarks, service marks, or product names of the Licensor,
++      except as required for reasonable and customary use in describing the
++      origin of the Work and reproducing the content of the NOTICE file.
++
++   7. Disclaimer of Warranty. Unless required by applicable law or
++      agreed to in writing, Licensor provides the Work (and each
++      Contributor provides its Contributions) on an "AS IS" BASIS,
++      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
++      implied, including, without limitation, any warranties or conditions
++      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
++      PARTICULAR PURPOSE. You are solely responsible for determining the
++      appropriateness of using or redistributing the Work and assume any
++      risks associated with Your exercise of permissions under this License.
++
++   8. Limitation of Liability. In no event and under no legal theory,
++      whether in tort (including negligence), contract, or otherwise,
++      unless required by applicable law (such as deliberate and grossly
++      negligent acts) or agreed to in writing, shall any Contributor be
++      liable to You for damages, including any direct, indirect, special,
++      incidental, or consequential damages of any character arising as a
++      result of this License or out of the use or inability to use the
++      Work (including but not limited to damages for loss of goodwill,
++      work stoppage, computer failure or malfunction, or any and all
++      other commercial damages or losses), even if such Contributor
++      has been advised of the possibility of such damages.
++
++   9. Accepting Warranty or Additional Liability. While redistributing
++      the Work or Derivative Works thereof, You may choose to offer,
++      and charge a fee for, acceptance of support, warranty, indemnity,
++      or other liability obligations and/or rights consistent with this
++      License. However, in accepting such obligations, You may act only
++      on Your own behalf and on Your sole responsibility, not on behalf
++      of any other Contributor, and only if You agree to indemnify,
++      defend, and hold each Contributor harmless for any liability
++      incurred by, or claims asserted against, such Contributor by reason
++      of your accepting any such warranty or additional liability.
++
++   END OF TERMS AND CONDITIONS
+diff --git a/chimera-shims/udon/src/buffer.rs b/chimera-shims/udon/src/buffer.rs
+new file mode 100644
+index 00000000..7f5d1296
+--- /dev/null
++++ b/chimera-shims/udon/src/buffer.rs
+@@ -0,0 +1,210 @@
++use crate::source::{ChannelCount, Sample, SampleRate, Source};
++use std::{
++    marker::PhantomData,
++    sync::{Arc, Condvar, Mutex},
++};
++
++const DEF_BUFFER_SIZE: usize = 4800;
++
++/// Adds threaded buffering to any Source object using an internal ring buffer.
++///
++/// It should be noted that a Buffer will induce filter delay proportional to the buffer size.
++/// For example, the default size of 4800 samples will cause a 50 millisecond filter delay, assuming it's connected to
++/// a 48000 Hz and 2-channel output. Doubling the buffer size will double the resulting filter delay.
++///
++/// For consistent filter delay across systems, you may want to use a buffer size calculated from output variables,
++/// for example: `Buffer::with_capacity(sample_rate * channel_count / 20)`
++pub struct Buffer<S>
++where
++    S: Source + Send + 'static,
++{
++    _source: PhantomData<S>,
++    channel_count: ChannelCount,
++    sample_rate: SampleRate,
++    buffer: Arc<(Mutex<RingBuffer>, Condvar)>,
++}
++
++struct RingBuffer {
++    data: Box<[Sample]>,
++    index: usize,
++    len: usize,
++    samples_remaining: Option<usize>,
++    dropped: bool,
++}
++
++impl<S> Buffer<S>
++where
++    S: Source + Send + 'static,
++{
++    /// Creates a new Buffer with the given source and the default buffer size (currently 4800, but this may change.)
++    /// Use with_capacity() instead to specify a custom buffer size. Buffer size cannot be changed after creation.
++    pub fn new(source: S) -> Self {
++        Self::with_capacity(source, DEF_BUFFER_SIZE)
++    }
++
++    /// Creates a new Buffer with the given source and internal buffer capacity.
++    /// Buffer capacity will never change (and thus, cannot be changed) after creation.
++    pub fn with_capacity(mut source: S, capacity: usize) -> Self {
++        let channel_count = source.channel_count();
++        let sample_rate = source.sample_rate();
++        let mut buffer = Vec::with_capacity(capacity);
++        unsafe {
++            buffer.set_len(capacity);
++        }
++
++        let ring_buffer = Arc::new((
++            Mutex::new(RingBuffer {
++                data: buffer.into_boxed_slice(),
++                index: 0,
++                len: 0,
++                samples_remaining: None,
++                dropped: false,
++            }),
++            Condvar::new(),
++        ));
++        let ring_buffer_clone = ring_buffer.clone();
++
++        std::thread::spawn(move || {
++            let mut back_buffer = Vec::with_capacity(capacity);
++
++            let (b, cvar) = &*ring_buffer_clone;
++            let mut ring_buffer = b.lock().unwrap();
++
++            loop {
++                // Wait until we're notified that we need to fill the buffer
++                while ring_buffer.len >= ring_buffer.data.len() {
++                    ring_buffer = cvar.wait(ring_buffer).unwrap();
++
++                    // Stop if the Buffer was dropped
++                    if ring_buffer.dropped {
++                        break
++                    }
++                }
++
++                // Fill ring buffer from source
++                let samples_missing = ring_buffer.data.len() - ring_buffer.len;
++                unsafe {
++                    // SAFETY: back_buffer is created with the same capacity as ring_buffer.data's length,
++                    // and here we are setting length to ring_buffer.data.len() at most
++                    back_buffer.set_len(samples_missing);
++                }
++                let written_count = source.write_samples(&mut back_buffer);
++                if written_count < samples_missing {
++                    unsafe {
++                        // SAFETY: samples_missing is a safe length as explained above, and we've also verified that
++                        // written_count is lower than samples_missing
++                        back_buffer.set_len(written_count);
++                    }
++                    ring_buffer.samples_remaining = Some(ring_buffer.len + written_count);
++                }
++
++                let write_index = (ring_buffer.index + ring_buffer.len) % ring_buffer.data.len();
++                if let Some(data) = ring_buffer.data.get_mut(write_index..(write_index + written_count)) {
++                    data.copy_from_slice(&back_buffer);
++                } else {
++                    let split_index = ring_buffer.data.len() - write_index;
++                    let (back1, back2) = back_buffer.split_at(split_index);
++                    ring_buffer.data[write_index..].copy_from_slice(back1);
++                    ring_buffer.data[..back2.len()].copy_from_slice(back2);
++                }
++                ring_buffer.len = ring_buffer.data.len();
++
++                if ring_buffer.samples_remaining.is_some() {
++                    break
++                }
++            }
++        });
++
++        Self { _source: PhantomData, channel_count, sample_rate, buffer: ring_buffer }
++    }
++}
++
++impl<S> Source for Buffer<S>
++where
++    S: Source + Send + 'static,
++{
++    #[inline]
++    fn channel_count(&self) -> ChannelCount {
++        self.channel_count
++    }
++
++    #[inline]
++    fn sample_rate(&self) -> SampleRate {
++        self.sample_rate
++    }
++
++    fn write_samples(&mut self, mut output_buffer: &mut [Sample]) -> usize {
++        loop {
++            // Lock access to ring buffer
++            let mut ring_buffer = self.buffer.0.lock().unwrap();
++
++            // Check if there's enough data in the ring buffer to totally fill the output
++            let output = if let Some(s) = &mut ring_buffer.samples_remaining {
++                let samples = output_buffer.len().min(*s);
++                *s -= samples;
++                let (out1, out2) = output_buffer.split_at_mut(samples);
++                output_buffer = out2;
++                out1
++            } else {
++                &mut *output_buffer
++            };
++
++            // Short circuit if there are 0 samples left to play
++            if output.len() == 0 {
++                break 0
++            }
++
++            if ring_buffer.len >= output.len() {
++                // There's enough data to complete this request, so write and return
++                ring_buffer.write_to(output);
++                self.buffer.1.notify_one();
++                break output.len()
++            } else {
++                // There's some data in the buffer, but not enough.
++                // This will most likely happen if the buffer is smaller than the read being performed.
++                // Write it to the output, truncate the output slice, then continue looping to wait for more data
++                let sample_count = ring_buffer.len;
++                ring_buffer.write_to(&mut output[..sample_count]);
++                self.buffer.1.notify_one();
++                output_buffer = &mut output_buffer[sample_count..];
++            }
++        }
++    }
++}
++
++impl<S> Drop for Buffer<S>
++where
++    S: Source + Send + 'static,
++{
++    fn drop(&mut self) {
++        let (b, cvar) = &*self.buffer;
++        let mut ring_buffer = b.lock().unwrap();
++        ring_buffer.dropped = true;
++        cvar.notify_one();
++    }
++}
++
++impl RingBuffer {
++    // Only meant as a helper fn. Assumes there's enough data in the ring buffer to fill the output.
++    fn write_to(&mut self, output: &mut [Sample]) {
++        // Check if we need 1 or 2 memcpy's due to the ring buffer looping round
++        if let Some(data) = self.data.get(self.index..(self.index + output.len())) {
++            // Just one memcpy
++            output.copy_from_slice(data);
++
++            // Remove data from the front of the ring buffer
++            self.index = (self.index + output.len()) % self.data.len();
++            self.len -= output.len();
++        } else {
++            // Two memcpy's
++            let new_index = self.index + output.len() - self.data.len();
++            let (output1, output2) = output.split_at_mut(self.data.len() - self.index);
++            output1.copy_from_slice(&self.data[self.index..]);
++            output2.copy_from_slice(&self.data[..new_index]);
++
++            // Remove data from the front of the ring buffer
++            self.index = new_index;
++            self.len -= output.len();
++        }
++    }
++}
+diff --git a/chimera-shims/udon/src/cycle.rs b/chimera-shims/udon/src/cycle.rs
+new file mode 100644
+index 00000000..5cc2bfc7
+--- /dev/null
++++ b/chimera-shims/udon/src/cycle.rs
+@@ -0,0 +1,42 @@
++use crate::{source::{ChannelCount, SampleRate, Sample, Source}};
++
++/// A Source which endlessly cycles another Source, calling reset() each time it ends.
++///
++/// Note that this struct is not necessarily endless - it will exit if given a Source containing 0 samples.
++pub struct Cycle<S: Source>(S);
++
++impl<S: Source> Cycle<S> {
++    #[inline(always)]
++    pub fn new(source: S) -> Self {
++        Self(source)
++    }
++}
++
++impl<S:Source> Source for Cycle<S> {
++    #[inline]
++    fn channel_count(&self) -> ChannelCount {
++        self.0.channel_count()
++    }
++
++    #[inline]
++    fn sample_rate(&self) -> SampleRate {
++        self.0.sample_rate()
++    }
++
++    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize {
++        let mut written = self.0.write_samples(buffer);
++        while written != buffer.len() {
++            self.0.reset();
++            let newly_written = self.0.write_samples(&mut buffer[written..]);
++            if newly_written == 0 {
++                return written;
++            }
++            written += newly_written;
++        }
++        buffer.len()
++    }
++
++    fn reset(&mut self) {
++        self.0.reset()
++    }
++}
+diff --git a/chimera-shims/udon/src/error.rs b/chimera-shims/udon/src/error.rs
+new file mode 100644
+index 00000000..075052ee
+--- /dev/null
++++ b/chimera-shims/udon/src/error.rs
+@@ -0,0 +1,21 @@
++#[derive(Debug)]
++#[cfg_attr(feature = "serde-derives", derive(serde::Serialize, serde::Deserialize))]
++pub enum Error {
++    /// The device no longer exists (ie. it has been disabled or unplugged)
++    DeviceNotAvailable,
++
++    /// The device doesn't support any of the playback configurations we can use
++    DeviceNotUsable,
++
++    /// There is no output device available
++    NoOutputDevice,
++
++    /// The requested API is not available on this system
++    ApiNotAvailable,
++
++    /// OOM
++    OutOfMemory,
++
++    /// An error unknown to this crate has been reported by the host
++    Unknown,
++}
+diff --git a/chimera-shims/udon/src/lib.rs b/chimera-shims/udon/src/lib.rs
+new file mode 100644
+index 00000000..af517f11
+--- /dev/null
++++ b/chimera-shims/udon/src/lib.rs
+@@ -0,0 +1,60 @@
++//pub mod buffer;
++mod error;
++pub mod cycle;
++pub mod mixer;
++pub mod rechanneler;
++pub mod resampler;
++
++pub mod source;
++
++#[cfg(feature = "wav")]
++pub mod wav;
++
++use crate::source::{ChannelCount, Sample, SampleRate, Source};
++
++/// A basic sound-playing object. When fed to an output stream, will play the samples it contains until it has no more.
++/// If the samples have a different sample rate than the output stream, the output will sound sped up or slowed down.
++/// Use a resampler (such as boop::resampler::Polyphase, or implement your own) to resample it at the correct rate.
++#[cfg_attr(feature = "serde-derives", derive(serde::Serialize, serde::Deserialize))]
++pub struct Player {
++    samples: Box<[Sample]>,
++    channels: ChannelCount,
++    sample_rate: SampleRate,
++    offset: usize,
++}
++
++impl Player {
++    pub fn new(channels: ChannelCount, sample_rate: SampleRate, samples: Box<[Sample]>) -> Self {
++        Self { channels, sample_rate, samples, offset: 0 }
++    }
++}
++
++impl Source for Player {
++    #[inline]
++    fn channel_count(&self) -> ChannelCount {
++        self.channels
++    }
++
++    #[inline]
++    fn sample_rate(&self) -> SampleRate {
++        self.sample_rate
++    }
++
++    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize {
++        let old_offset = self.offset;
++        self.offset += buffer.len();
++        if let Some(i) = self.samples.get(old_offset..self.offset) {
++            buffer.copy_from_slice(i);
++            buffer.len()
++        } else if let Some(i) = self.samples.get(old_offset..) {
++            buffer[..i.len()].copy_from_slice(i);
++            i.len()
++        } else {
++            0
++        }
++    }
++
++    fn reset(&mut self) {
++        self.offset = 0;
++    }
++}
+diff --git a/chimera-shims/udon/src/mixer.rs b/chimera-shims/udon/src/mixer.rs
+new file mode 100644
+index 00000000..f494df9b
+--- /dev/null
++++ b/chimera-shims/udon/src/mixer.rs
+@@ -0,0 +1,148 @@
++use crate::{source::{ChannelCount, SampleRate, Sample, Source}};
++use std::{sync::Arc, sync::{atomic::{AtomicBool, Ordering}, mpsc::{self, Receiver, Sender}}};
++
++const INIT_CAPACITY: usize = 16;
++
++/// A simple additive mixer. Construct with `Mixer::new()`. This will return a Mixer and a MixerHandle.
++/// The Mixer is a Source object, and intended to be attached (directly or indirectly) to an OutputStream
++/// or any other place where a Source is expected.
++/// The MixerHandle is kept and used for dynamically adding Sources to the Mixer.
++pub struct Mixer {
++    channels: ChannelCount,
++    sample_rate: SampleRate,
++    sources: Vec<(Box<dyn Source + Send + 'static>, Arc<SoundInfo>)>,
++    input_buffer: Vec<Sample>,
++    receiver: Receiver<(Box<dyn Source + Send + 'static>, Arc<SoundInfo>)>,
++}
++
++/// Returned from Mixer::new(), and permanently associated with the Mixer created alongside it.
++/// Used for dynamically adding sounds to the Mixer with `handle.add()`
++pub struct MixerHandle(Sender<(Box<dyn Source + Send + 'static>, Arc<SoundInfo>)>);
++
++/// Error type for Mixer calls
++#[derive(Debug, Clone, Copy)]
++pub enum Error {
++    /// Indicates that something could not be sent to the Mixer via a MixerHandle.
++    /// This usually happens because the Mixer no longer exists.
++    SendError,
++}
++
++impl Mixer {
++    /// Constructs a new Mixer and MixerHandle.
++    ///
++    /// `Mixer` does not make any changes to the channel count or sample rate of its Sources. As such, it needs to know
++    /// its expected output rate and channel count on construction.
++    ///
++    /// If Sources with a different sample rate or channel count than this are subsequently added to the Mixer,
++    /// they will sound wrong. For resampling and rechanneling, see `Resampler` and `Rechanneler`.
++    pub fn new(sample_rate: SampleRate, channels: ChannelCount) -> (Self, MixerHandle) {
++        let (sender, receiver) = mpsc::channel();
++        (
++            Self { channels, sample_rate, sources: Vec::with_capacity(INIT_CAPACITY), input_buffer: Vec::new(), receiver },
++            MixerHandle(sender),
++        )
++    }
++}
++
++impl Source for Mixer {
++    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize {
++        buffer.iter_mut().for_each(|x| *x = 0.0);
++
++        // Check for new sources...
++        while let Ok(source) = self.receiver.try_recv() {
++            self.sources.push(source);
++        }
++
++        let input_buffer = &mut self.input_buffer;
++
++        self.sources.retain_mut(|(source, info)| {
++            if info.stop.load(Ordering::Acquire) {
++                info.running.store(false, Ordering::Release);
++                false
++            } else {
++                input_buffer.resize_with(buffer.len(), Default::default);
++                let count = source.write_samples(input_buffer);
++
++                for (in_sample, out_sample) in input_buffer.iter().take(count).copied().zip(buffer.iter_mut()) {
++                    *out_sample += in_sample;
++                }
++
++                let running = count == input_buffer.len();
++                info.running.store(running, Ordering::Release);
++                running
++            }
++        });
++
++        buffer.len()
++    }
++
++    fn channel_count(&self) -> ChannelCount {
++        self.channels
++    }
++
++    fn sample_rate(&self) -> SampleRate {
++        self.sample_rate
++    }
++
++    fn reset(&mut self) {
++        self.sources.clear()
++    }
++}
++
++impl MixerHandle {
++    /// Adds a Source to the Mixer associated with this handle. The Mixer will play the Source until it ends,
++    /// then discard it.
++    pub fn add(&self, source: impl Source + Send + 'static) -> Result<SoundHandle, Error> {
++        let arc = Arc::new(SoundInfo {
++            running: AtomicBool::new(true),
++            stop: AtomicBool::new(false),
++        });
++
++        self.0.send((Box::new(source), arc.clone())).map_err(|_| Error::SendError)?;
++        Ok(SoundHandle(arc))
++    }
++}
++
++struct SoundInfo {
++    running: AtomicBool,
++    stop: AtomicBool,
++}
++
++pub struct SoundHandle(Arc<SoundInfo>);
++
++impl SoundHandle {
++    #[inline(always)]
++    pub fn is_running(&self) -> bool {
++        self.0.running.load(Ordering::Acquire)
++    }
++
++    #[inline(always)]
++    pub fn stop(&self) {
++        self.0.stop.store(true, Ordering::Release)
++    }
++}
++
++trait RetainMut<T> {
++    fn retain_mut(&mut self, f: impl FnMut(&mut T) -> bool);
++}
++
++impl<T> RetainMut<T> for Vec<T> {
++    fn retain_mut(&mut self, mut f: impl FnMut(&mut T) -> bool) {
++        let len = self.len();
++        let mut del = 0;
++        {
++            let v = &mut **self;
++
++            for i in 0..len {
++                if !f(&mut v[i]) {
++                    del += 1;
++                } else if del > 0 {
++                    v.swap(i - del, i);
++                }
++            }
++        }
++        if del > 0 {
++            self.truncate(len - del);
++        }
++    }
++}
+diff --git a/chimera-shims/udon/src/rechanneler.rs b/chimera-shims/udon/src/rechanneler.rs
+new file mode 100644
+index 00000000..0bda2618
+--- /dev/null
++++ b/chimera-shims/udon/src/rechanneler.rs
+@@ -0,0 +1,69 @@
++use crate::source::{ChannelCount, Sample, SampleRate, Source};
++
++/// Converts the number of channels in a Source to the target channel count.
++///
++/// Channel mixing strategy is as follows:
++/// - if input and output channel count is the same, pass straight through
++/// - otherwise: take the average input sample from each frame and duplicate it across each output frame
++///
++/// This suffices for most use-cases, but a more specialized strategy would be needed for mixing a multi-channel input
++/// to a >2 channel output (5-channel multimedia, for example) non-naively.
++pub struct Rechanneler<S>
++where
++    S: Source,
++{
++    source: S,
++    source_channels: ChannelCount,
++    target_channels: ChannelCount,
++    buffer: Vec<Sample>,
++}
++
++impl<S> Rechanneler<S>
++where
++    S: Source,
++{
++    pub fn new(source: S, target_channels: ChannelCount) -> Self {
++        let source_channels = source.channel_count();
++        Self { source, source_channels, target_channels, buffer: Vec::new() }
++    }
++}
++
++impl<S> Source for Rechanneler<S>
++where
++    S: Source,
++{
++    #[inline(always)]
++    fn sample_rate(&self) -> SampleRate {
++        self.source.sample_rate()
++    }
++
++    #[inline(always)]
++    fn channel_count(&self) -> ChannelCount {
++        self.target_channels
++    }
++
++    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize {
++        if self.source_channels == self.target_channels {
++            self.source.write_samples(buffer)
++        } else {
++            let from: usize = self.source_channels.get().into();
++            let to: usize = self.target_channels.get().into();
++
++            self.buffer.resize_with(buffer.len() * from / to, Default::default);
++            let written_count = self.source.write_samples(&mut self.buffer);
++            let iter = self.buffer.chunks_exact(from).take(written_count / from).zip(buffer.chunks_exact_mut(to));
++            let frame_count = iter.len();
++
++            for (in_samples, out_samples) in iter {
++                let sample = in_samples.iter().sum::<Sample>() / in_samples.len() as Sample;
++                out_samples.iter_mut().for_each(|x| *x = sample);
++            }
++
++            frame_count * to
++        }
++    }
++
++    fn reset(&mut self) {
++        self.source.reset()
++    }
++}
+diff --git a/chimera-shims/udon/src/resampler.rs b/chimera-shims/udon/src/resampler.rs
+new file mode 100644
+index 00000000..82340b34
+--- /dev/null
++++ b/chimera-shims/udon/src/resampler.rs
+@@ -0,0 +1,285 @@
++use crate::source::{ChannelCount, Sample, SampleRate, Source};
++
++/// Implementation of a PQF resampler. Construct with: Resampler::new(source, source_rate, dest_rate)
++/// Once constructed, it will behave as a Source object which outputs samples at the target sample rate.
++pub struct Resampler<S>
++where
++    S: Source,
++{
++    source: S,
++    from: u32,
++    to: u32,
++    dest_rate: SampleRate, // Actual output rate - different from `to` because that is scaled down by GCD
++    left_offset: usize,
++    kaiser_values: Box<[Box<[f32]>]>,
++    filter_1: Box<[Sample]>,
++    filter_2: Box<[Sample]>,
++
++    // The size of the entire filter including both buffers
++    whole_filter_size: usize,
++
++    // The size of each individual buffer
++    buffer_size: usize,
++
++    // How many input samples were already discarded before the start of the current filter
++    input_offset: u64,
++
++    // How many output samples have been written so far
++    output_count: usize,
++
++    // The last valid sample in the filter, if the source ended and wasn't able to fill the entire buffer
++    last_sample: Option<usize>,
++}
++
++impl<S: Source> Resampler<S> {
++    pub fn new(mut source: S, dest_rate: SampleRate) -> Self {
++        #[inline]
++        fn gcd(a: u32, b: u32) -> u32 {
++            if b == 0 { a } else { gcd(b, a % b) }
++        }
++
++        fn sinc_filter(left: u32, gain: f64, cutoff: f64, i: u32) -> f64 {
++            #[inline]
++            fn sinc(x: f64) -> f64 {
++                if x == 0.0 {
++                    1.0
++                } else {
++                    let x_pi = x * std::f64::consts::PI;
++                    x_pi.sin() / x_pi
++                }
++            }
++
++            #[inline]
++            fn bessel_i0(x: f64) -> f64 {
++                // Just trust me on this one
++                let ax = x.abs();
++                if ax < 3.75 {
++                    let y = (x / 3.75).powi(2);
++                    1.0 + y
++                        * (3.5156229
++                            + y * (3.0899424 + y * (1.2067492 + y * (0.2659732 + y * (0.0360768 + y * 0.0045813)))))
++                } else {
++                    let y = 3.75 / ax;
++                    (ax.exp() / ax.sqrt())
++                        * (0.39894228
++                            + y * (0.01328592
++                                + y * (0.00225319
++                                    + y * (-0.00157565
++                                        + y * (0.00916281
++                                            + y * (-0.02057706
++                                                + y * (0.02635537 + y * (-0.01647633 + y * 0.00392377))))))))
++                }
++            }
++
++            #[inline]
++            fn kaiser(k: f64) -> f64 {
++                if !(-1.0..=1.0).contains(&k) {
++                    0.0
++                } else {
++                    // 6.20426 is the Kaiser beta value for a rejection of 65 dB.
++                    // The magic number at the end is bessel_i0(6.20426)
++                    bessel_i0(6.20426 * (1.0 - k.powi(2)).sqrt()) / 81.0332923199
++                }
++            }
++
++            let left = f64::from(left);
++            let x = f64::from(i) - left;
++            kaiser(x / left) * 2.0 * gain * cutoff * sinc(2.0 * cutoff * x)
++        }
++
++        #[inline]
++        fn kaiser_order(transition_width: f64) -> usize {
++            // Calculate kaiser order for given transition width and a rejection of 65 dB.
++            // Kaiser's original formula for this is: (rejection - 7.95) / (2.285 * 2 * pi * width)
++            ((65.0 - 7.95) / (2.285 * 2.0 * std::f64::consts::PI * transition_width)).ceil() as usize
++        }
++
++        let src = u32::from(source.sample_rate());
++        let dst = u32::from(dest_rate);
++        let gcd = gcd(src, dst);
++        let from = src / gcd;
++        let to = dst / gcd;
++
++        let downscale_factor = f64::from(to.max(from));
++        let cutoff = 0.475 / downscale_factor;
++        let transition_width = 0.05 / downscale_factor;
++
++        let kaiser_value_count = kaiser_order(transition_width) + 1;
++        let left_offset = kaiser_value_count / 2;
++
++        let step = to as usize;
++        let kaiser_values: Box<[Box<[f32]>]> = (0..step).map(|start_val| {
++            (start_val..kaiser_value_count).step_by(step).rev().map(|i| {
++                sinc_filter(left_offset as _, downscale_factor, cutoff, i as _) as f32
++            }).collect::<Vec<_>>().into_boxed_slice()
++        }).collect::<Vec<_>>().into_boxed_slice();
++
++        let filter_samples = ((kaiser_value_count + to as usize) / to as usize) * usize::from(source.channel_count().get());
++        let mut filter_1 = Vec::with_capacity(filter_samples);
++        let mut filter_2 = Vec::with_capacity(filter_samples);
++
++        unsafe {
++            filter_1.set_len(filter_samples);
++            filter_2.set_len(filter_samples);
++        }
++
++        let last_sample = Self::init_filter(&mut source, &mut filter_1, &mut filter_2);
++
++        Self {
++            source,
++            from,
++            to,
++            dest_rate,
++            left_offset,
++            kaiser_values,
++            filter_1: filter_1.into_boxed_slice(),
++            filter_2: filter_2.into_boxed_slice(),
++            whole_filter_size: filter_samples * 2,
++            buffer_size: filter_samples,
++            input_offset: 0,
++            output_count: 0,
++            last_sample,
++        }
++    }
++}
++
++impl<S: Source> Source for Resampler<S> {
++    #[inline]
++    fn channel_count(&self) -> ChannelCount {
++        self.source.channel_count()
++    }
++
++    #[inline]
++    fn sample_rate(&self) -> SampleRate {
++        self.dest_rate
++    }
++
++    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize {
++        let from = u64::from(self.from);
++        let to = u64::from(self.to);
++        let channels = usize::from(self.channel_count().get());
++
++        for (i, s) in buffer.iter_mut().enumerate() {
++            // Tells us which channel we're currently looking at in the output data.
++            // We should only be using input data from the same channel.
++            let channel = self.output_count % channels;
++
++            // Here, we calculate which input sample to start at and which set of kaiser values to use.
++            // We first calculate an upscaled sample index ("start"), then take both its division and modulo
++            // with our target sample rate. The int-division gives us a sample index in input data, and
++            // the modulo gives us our kaiser offset.
++            let start = (self.left_offset + (from as usize * (self.output_count / channels))) as u64;
++            let kaiser_index = start % to;
++            let input_index = start / to;
++
++            // input_index doesn't respect multi-channel tracks and ignores our filter setup, so now we'll
++            // translate it into a sample in our filter. This is actually the index of the LAST sample,
++            // inclusive, which we want to operate on.
++            let mut sample_index = (input_index * channels as u64) + channel as u64 - self.input_offset;
++
++            // And now get a set of kaiser values to multiply by the filter.
++            let kaiser_values = unsafe {
++                // SAFETY: self.kaiser_values is a boxed slice with length `to`, and
++                // kaiser_index is calculated as a modulo of `to`
++                self.kaiser_values.get_unchecked(kaiser_index as usize)
++            };
++
++            // sample_index is our last (inclusive) sample, so if it's beyond the length of our filter,
++            // then we need new data.
++            // However, don't try to get new data if the source has already been emptied (ie. we have a last_sample).
++            while (sample_index >= self.whole_filter_size as u64) && self.last_sample.is_none() {
++                // Read new samples into filter 1, which is now fully depleted, so it's fine to overwrite it.
++                let len = self.source.write_samples(&mut self.filter_1);
++                // Handle our source being empty
++                if len != self.filter_1.len() {
++                    self.last_sample = Some(self.buffer_size + len);
++                }
++                // Swap filters 1 and 2. Now the new samples are in filter_2. Turbofish here guarantees O(1) ptr swap
++                std::mem::swap::<Box<_>>(&mut self.filter_1, &mut self.filter_2);
++                // And finally set our sample index back and input offset forward appropriately.
++                let sample_count = self.buffer_size as u64;
++                sample_index -= sample_count;
++                self.input_offset += sample_count;
++            }
++
++            // If we are past the end of our audio, exit early and indicate how much of the buffer we filled
++            if let Some(end) = self.last_sample {
++                if sample_index as usize + (self.left_offset * channels) > end {
++                    return i
++                }
++            }
++
++            // And at last we can calculate an output sample.
++            *s = self.get_sample(kaiser_values, channels, channel, sample_index as usize);
++
++            self.output_count += 1;
++        }
++
++        buffer.len()
++    }
++
++    fn reset(&mut self) {
++        self.source.reset();
++        self.last_sample = Self::init_filter(&mut self.source, &mut self.filter_1, &mut self.filter_2);
++        self.input_offset = 0;
++        self.output_count = 0;
++    }
++}
++
++impl<S> Resampler<S> where S: Source {
++    // Calculates an output sample at the given sample_index.
++    // sample_index is the index of the LAST (inclusive) sample we want to use in the calculation.
++    // That's because, strangely, it's the most efficient way of calculating a stream position.
++    #[inline(always)]
++    fn get_sample(&self, kaiser_values: &[f32], channels: usize, channel: usize, sample_index: usize) -> Sample {
++        unsafe {
++            let kaiser_offset = kaiser_values.len() - 1;
++            let (filter_skip_1, kaiser_skip) = {
++                match sample_index.checked_sub(kaiser_offset * channels) {
++                    Some(x) => (x, 0),
++                    None => (channel, kaiser_offset - (sample_index / channels)),
++                }
++            };
++
++            let filter_skip_2 = {
++                match sample_index.checked_sub(kaiser_offset * channels + self.buffer_size) {
++                    Some(x) => x,
++                    None => channel,
++                }
++            };
++
++            let mut output: Sample = 0.0;
++            let mut f1_ptr = self.filter_1.as_ptr().add(filter_skip_1);
++            let mut f2_ptr = self.filter_2.as_ptr().add(filter_skip_2);
++            let mut kaiser_ptr = kaiser_values.as_ptr().add(kaiser_skip);
++            let f1_end = self.filter_1.as_ptr().add(self.buffer_size);
++            let f2_end = self.filter_2.as_ptr().add(self.buffer_size);
++            let kaiser_end = kaiser_values.as_ptr().add(kaiser_values.len());
++
++            while f1_ptr < f1_end && kaiser_ptr < kaiser_end {
++                output += (*f1_ptr) * (*kaiser_ptr);
++                kaiser_ptr = kaiser_ptr.add(1);
++                f1_ptr = f1_ptr.add(channels);
++            }
++
++            while f2_ptr < f2_end && kaiser_ptr < kaiser_end {
++                output += (*f2_ptr) * (*kaiser_ptr);
++                kaiser_ptr = kaiser_ptr.add(1);
++                f2_ptr = f2_ptr.add(channels);
++            }
++
++            output
++        }
++    }
++
++    // Initializes a filter from a Sample, returning the optional last_sample
++    fn init_filter(source: &mut S, filter_1: &mut [Sample], filter_2: &mut [Sample]) -> Option<usize> {
++        let len = source.write_samples(filter_1);
++        if len == filter_1.len() {
++            let len = source.write_samples(filter_2);
++            if len == filter_2.len() { None } else { Some(len) }
++        } else {
++            Some(len)
++        }
++    }
++}
+diff --git a/chimera-shims/udon/src/source.rs b/chimera-shims/udon/src/source.rs
+new file mode 100644
+index 00000000..fa6f4199
+--- /dev/null
++++ b/chimera-shims/udon/src/source.rs
+@@ -0,0 +1,38 @@
++use std::num::{NonZeroU16, NonZeroU32};
++
++pub type ChannelCount = NonZeroU16;
++pub type Sample = f32;
++pub type SampleRate = NonZeroU32;
++
++pub mod consts;
++
++/// Trait for a source of audio that outputs PCM at a given sample rate.
++pub trait Source {
++    /// Returns the number of channels in this `Source`.
++    ///
++    /// This function must always return the same value.
++    fn channel_count(&self) -> ChannelCount;
++
++    /// Returns the sample rate the written data should be interpreted at.
++    ///
++    /// This function must always return the same value.
++    fn sample_rate(&self) -> SampleRate;
++
++    /// Writes the next set of samples to an output `buffer`.
++    ///
++    /// The implementor is expected to "remember" its progress through the sound it's playing,
++    /// such that it must continue where it left off on subsequent calls to this function.
++    /// If there are multiple channels then the samples must be interleaved.
++    /// Values must be written contiguously from the start of the `buffer`.
++    ///
++    /// Returns the number of samples which were written to the `buffer`.
++    /// A value lower than `buffer.len()` indicates the sound has ended.
++    /// Any further calls to this function after that must not write anything and return 0.
++    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize;
++
++    /// Resets the Source back to its start or its default state.
++    ///
++    /// Note that a Source does not necessarily have to output the same samples after each reset,
++    /// although things such as file players usually will.
++    fn reset(&mut self);
++}
+diff --git a/chimera-shims/udon/src/source/consts.rs b/chimera-shims/udon/src/source/consts.rs
+new file mode 100644
+index 00000000..c9a4f8f0
+--- /dev/null
++++ b/chimera-shims/udon/src/source/consts.rs
+@@ -0,0 +1,85 @@
++//! Helper constants for [`ChannelCount`] and [`SampleRate`].
++//!
++//! Since both of those types are guaranteed to be non-zero,
++//! construction can be a bit more tricky than with a regular integer.
++//!
++//! For common channel counts and sample rates, these constants should simplify that.
++
++use super::{ChannelCount, SampleRate};
++
++macro_rules! nonzero_consts {
++    ( $( $t:ty { $( $(#[$outer:meta])* $name:ident = $val:literal ),* $(,)? } ),* $(,)? ) => {
++        $(
++            $( $(#[$outer])* pub const $name: $t = unsafe { <$t> :: new_unchecked($val) }; )*
++        )*
++    };
++}
++
++nonzero_consts! {
++    ChannelCount {
++        /// One channel ("mono")
++        CH_MONO = 1,
++
++        /// Two channels ("stereo")
++        CH_STEREO = 2,
++    },
++
++    SampleRate {
++        /// 8,000Hz
++        SR_8000 = 8000,
++
++        /// 11,025Hz
++        SR_11025 = 11025,
++
++        /// 16,000Hz
++        SR_16000 = 16000,
++
++        /// 22,050Hz
++        SR_22050 = 22050,
++
++        /// 32,000Hz
++        SR_32000 = 32000,
++
++        /// 37,800Hz
++        SR_37800 = 37800,
++
++        /// 44,056Hz
++        SR_44056 = 44056,
++
++        /// 44,100Hz
++        SR_44100 = 44100,
++
++        /// 47,250Hz
++        SR_47250 = 47250,
++
++        /// 48,000Hz
++        SR_48000 = 48000,
++
++        /// 50,000Hz
++        SR_50000 = 50000,
++
++        /// 50,400Hz
++        SR_50400 = 50400,
++
++        /// 88,200Hz
++        SR_88200 = 88200,
++
++        /// 96,000Hz
++        SR_96000 = 96000,
++
++        /// 176,400Hz
++        SR_176400 = 176400,
++
++        /// 192,000Hz
++        SR_192000 = 192000,
++
++        /// 352,800Hz
++        SR_352800 = 352800,
++
++        /// 2,822,400Hz
++        SR_2822400 = 2822400,
++
++        /// 5,644,800Hz
++        SR_5644800 = 5644800,
++    },
++}
+diff --git a/chimera-shims/udon/src/wav.rs b/chimera-shims/udon/src/wav.rs
+new file mode 100644
+index 00000000..10030894
+--- /dev/null
++++ b/chimera-shims/udon/src/wav.rs
+@@ -0,0 +1,228 @@
++use crate::source::{ChannelCount, Sample, SampleRate, Source};
++use std::sync::Arc;
++
++/// A Source object for decoding and playing samples from a .wav file.
++///
++/// This type is constructed by passing the entire .wav file contents in as bytes. That is to say, the entire file
++/// must be provided at once, and the WavPlayer will take ownership of it.
++///
++/// Once created, the file contents will be atomically reference-counted, so making multiple copies of this type using
++/// .clone() is relatively costless. Cloning the player is useful if you intend to play it more than once.
++#[derive(Clone, Debug)]
++#[cfg_attr(feature = "serde-derives", derive(serde::Serialize, serde::Deserialize))]
++pub struct WavPlayer {
++    file: Arc<[u8]>,
++    channels: ChannelCount,
++    sample_rate: SampleRate,
++    sample_bytes: usize,
++    data_start: usize,
++    next_sample_offset: usize,
++    format: Format,
++    length: usize,
++}
++
++#[derive(Clone, Copy, Debug)]
++#[cfg_attr(feature = "serde-derives", derive(serde::Serialize, serde::Deserialize))]
++pub enum Error {
++    /// This does not appear to be a .wav file
++    InvalidFile,
++
++    /// The audio data in this file is malformed
++    MalformedData,
++
++    /// The audio data in this file is encoded in a way we don't support
++    UnknownFormat,
++}
++
++#[derive(Clone, Copy, Debug)]
++#[cfg_attr(feature = "serde-derives", derive(serde::Serialize, serde::Deserialize))]
++pub enum Format {
++    U8,
++    I16,
++    I24,
++    I32,
++    F32,
++}
++
++impl WavPlayer {
++    pub fn new(file: impl Into<Vec<u8>>) -> Result<Self, Error> {
++        fn find_section(data: &[u8], section_name: &[u8; 4]) -> Option<(usize, usize)> {
++            let mut data_start = 12;
++            let data_len = loop {
++                if data.len() < data_start + 8 {
++                    return None;
++                }
++                let is_data_chunk = data[data_start..(data_start + section_name.len())] == section_name[..];
++                let data_len = u32::from_le_bytes([
++                    data[data_start + 4],
++                    data[data_start + 5],
++                    data[data_start + 6],
++                    data[data_start + 7],
++                ]) as usize;
++                data_start += 8;
++                if is_data_chunk {
++                    break data_len
++                } else {
++                    data_start += data_len;
++                }
++            };
++            Some((data_start, data_len))
++        }
++
++        let mut file = file.into();
++        if file.get(0..4) != Some(&[b'R', b'I', b'F', b'F']) || file.get(8..12) != Some(&[b'W', b'A', b'V', b'E']) {
++            return Err(Error::InvalidFile)
++        }
++
++        let (fmt_start, fmt_len) = find_section(&file, b"fmt ").ok_or(Error::InvalidFile)?;
++        if fmt_len < 16 {
++            return Err(Error::InvalidFile)
++        }
++        let fmt = file.get(fmt_start..(fmt_start + fmt_len)).ok_or(Error::InvalidFile)?;
++
++        let audio_format = i16::from_le_bytes([fmt[0], fmt[1]]);
++        let channels = u16::from_le_bytes([fmt[2], fmt[3]]);
++        let sample_rate = u32::from_le_bytes([fmt[4], fmt[5], fmt[6], fmt[7]]);
++        let sample_bits = u16::from_le_bytes([fmt[14], fmt[15]]);
++        let ext_guid = fmt.get(24..40);
++
++        let data_format_pcm = &[1, 0, 0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113];
++        let data_format_float = &[3, 0, 0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113];
++        let format = match (audio_format, sample_bits) {
++            (1, 8) => Format::U8,
++            (1, 16) => Format::I16,
++            (1, 24) => Format::I24,
++            (1, 32) => Format::I32,
++            (3, 32) => Format::F32,
++            (-2, 8) if ext_guid == Some(data_format_pcm) => Format::U8,
++            (-2, 16) if ext_guid == Some(data_format_pcm) => Format::I16,
++            (-2, 24) if ext_guid == Some(data_format_pcm) => Format::I24,
++            (-2, 32) if ext_guid == Some(data_format_pcm) => Format::I32,
++            (-2, 32) if ext_guid == Some(data_format_float) => Format::F32,
++            _ => return Err(Error::UnknownFormat),
++        };
++
++        let channels = ChannelCount::new(channels).ok_or(Error::UnknownFormat)?;
++        let sample_rate = SampleRate::new(sample_rate).ok_or(Error::UnknownFormat)?;
++
++        let (data_start, data_len) = find_section(&file, b"data").ok_or(Error::InvalidFile)?;
++
++        let expected_file_length = data_len + data_start;
++        if expected_file_length > file.len() {
++            return Err(Error::MalformedData)
++        } else {
++            file.truncate(expected_file_length);
++        }
++
++        let sample_bytes = usize::from(sample_bits / 8);
++
++        Ok(Self {
++            file: file.into(),
++            channels,
++            sample_rate,
++            sample_bytes,
++            data_start,
++            next_sample_offset: data_start,
++            format,
++            length: data_len / sample_bytes,
++        })
++    }
++
++    /// Returns the total number of samples in this wav file
++    pub fn length(&self) -> usize {
++        self.length
++    }
++}
++
++impl Source for WavPlayer {
++    #[inline]
++    fn channel_count(&self) -> ChannelCount {
++        self.channels
++    }
++
++    #[inline]
++    fn sample_rate(&self) -> SampleRate {
++        self.sample_rate
++    }
++
++    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize {
++        use std::convert::TryInto;
++
++        if let Some(i) = self.file.get(self.next_sample_offset..) {
++            let output_iter = buffer.iter_mut();
++
++            let samples_written;
++            match self.format {
++                Format::U8 => {
++                    let iter = output_iter.zip(i.iter().copied());
++                    samples_written = iter.len();
++                    iter.for_each(|(out, b)| *out = get_sample_u8(b));
++                },
++                Format::I16 => {
++                    let iter =
++                        output_iter.zip(i.chunks_exact(2).map(|x| <&[u8] as TryInto<&[u8; 2]>>::try_into(x).unwrap()));
++                    samples_written = iter.len();
++                    iter.for_each(|(out, b)| *out = get_sample_i16(b));
++                },
++                Format::I24 => {
++                    let iter =
++                        output_iter.zip(i.chunks_exact(3).map(|x| <&[u8] as TryInto<&[u8; 3]>>::try_into(x).unwrap()));
++                    samples_written = iter.len();
++                    iter.for_each(|(out, b)| *out = get_sample_i24(b));
++                },
++                Format::I32 => {
++                    let iter =
++                        output_iter.zip(i.chunks_exact(4).map(|x| <&[u8] as TryInto<&[u8; 4]>>::try_into(x).unwrap()));
++                    samples_written = iter.len();
++                    iter.for_each(|(out, b)| *out = get_sample_i32(b));
++                },
++                Format::F32 => {
++                    let iter =
++                        output_iter.zip(i.chunks_exact(4).map(|x| <&[u8] as TryInto<&[u8; 4]>>::try_into(x).unwrap()));
++                    samples_written = iter.len();
++                    iter.for_each(|(out, b)| *out = get_sample_f32(b));
++                },
++            }
++
++            self.next_sample_offset += samples_written * self.sample_bytes;
++            samples_written
++        } else {
++            0
++        }
++    }
++
++    fn reset(&mut self) {
++        self.next_sample_offset = self.data_start;
++    }
++}
++
++#[inline(always)]
++fn get_sample_u8(data: u8) -> f32 {
++    let sample = i16::from(data) - 0x80;
++    f32::from(sample) / f32::from(i8::MAX)
++}
++
++#[inline(always)]
++fn get_sample_i16(data: &[u8; 2]) -> f32 {
++    let sample = i16::from_le_bytes(*data);
++    f32::from(sample) / f32::from(i16::MAX)
++}
++
++#[inline(always)]
++fn get_sample_i24(data: &[u8; 3]) -> f32 {
++    let sample = i32::from_le_bytes([data[0], data[1], data[2], 0]);
++    let sign_mask = 1 << 23;
++    let sample = (sample ^ sign_mask).wrapping_sub(sign_mask) as i32;
++    (f64::from(sample) / 8388608.0) as f32 // 2^23, or the imaginary i24::MAX
++}
++
++#[inline(always)]
++fn get_sample_i32(data: &[u8; 4]) -> f32 {
++    let sample = i32::from_le_bytes(*data);
++    (f64::from(sample) / f64::from(i32::MAX)) as f32
++}
++
++#[inline(always)]
++fn get_sample_f32(data: &[u8; 4]) -> f32 {
++    f32::from_le_bytes(*data)
++}
+diff --git a/gm8emulator/src/game/audio.rs b/gm8emulator/src/game/audio.rs
+index 72de3bd3..d12f2707 100644
+--- a/gm8emulator/src/game/audio.rs
++++ b/gm8emulator/src/game/audio.rs
+@@ -4,11 +4,8 @@ mod mp3;
+ use serde::{Deserialize, Serialize};
+ use std::{
+     collections::HashMap,
+-    io::Write,
+-    process::{self, Child, Stdio},
+     sync::{
+         atomic::{AtomicU32, Ordering},
+-        mpsc::{self, Receiver, Sender},
+         Arc,
+     },
+ };
+@@ -16,7 +13,6 @@ use udon::{
+     cycle::Cycle,
+     rechanneler::Rechanneler,
+     resampler::Resampler,
+-    session::{Api, Session},
+     source::{ChannelCount, Sample, SampleRate, Source},
+     wav::WavPlayer,
+ };
+@@ -46,9 +42,10 @@ pub struct SoundParams {
+     pub volume: AtomicU32,
+ }
+ 
++/// The sound GameMaker plays is mixed here a frame at a time, by whoever runs
++/// the game (`mix`): there is no sound device and no thread.
+ pub struct AudioManager {
+-    mixer: Option<Mixer>,
+-    sample_sender: Option<Sender<Sample>>,
++    mixer: Mixer,
+     mixer_handle: MixerHandle,
+     mixer_channel_count: ChannelCount,
+     mixer_sample_rate: SampleRate,
+@@ -56,139 +53,38 @@ pub struct AudioManager {
+     global_volume: Arc<AtomicU32>,
+     end_times: HashMap<i32, Option<u128>>,
+     multimedia_end: Option<(i32, Option<u128>)>,
+-    audio_recorder: Option<Child>,
+ }
+ 
+-pub struct InterprocessSource {
+-    receiver: Receiver<Sample>,
+-    channels: ChannelCount,
+-    sample_rate: SampleRate,
+-}
+-
+-impl InterprocessSource {
+-    pub fn new(receiver: Receiver<Sample>, channels: ChannelCount, sample_rate: SampleRate) -> InterprocessSource {
+-        Self { receiver, channels, sample_rate }
+-    }
+-}
+-
+-impl Source for InterprocessSource {
+-    fn channel_count(&self) -> ChannelCount {
+-        self.channels
+-    }
+-
+-    fn sample_rate(&self) -> SampleRate {
+-        self.sample_rate
+-    }
+-
+-    fn write_samples(&mut self, buffer: &mut [Sample]) -> usize {
+-        buffer.fill_with(|| self.receiver.recv().unwrap_or_default());
+-
+-        buffer.len()
+-    }
+-
+-    fn reset(&mut self) {}
+-}
++/// The rate the mix is made at, and its channels.
++pub const MIX_RATE: u32 = 44100;
++pub const MIX_CHANNELS: u16 = 2;
+ 
+ impl AudioManager {
+-    pub fn new(do_output: bool, capture_audio: bool) -> Self {
+-        // TODO: not all these unwraps
+-        let session = Session::new(Api::SoundIo).unwrap();
+-        let device = session.default_output_device().unwrap();
+-        let sample_rate = device.sample_rate();
+-        let channel_count = device.channel_count();
++    pub fn new(do_output: bool, _capture_audio: bool) -> Self {
++        let sample_rate: SampleRate = SampleRate::new(MIX_RATE).unwrap();
++        let channel_count: ChannelCount = ChannelCount::new(MIX_CHANNELS).unwrap();
+         let global_volume = Arc::new(AtomicU32::from(1.0f32.to_bits()));
+         let (mixer, mixer_handle) = Mixer::new(sample_rate, channel_count, global_volume.clone());
+-        let (sample_sender, sample_receiver) = mpsc::channel();
+-
+-        let interprocess_source = InterprocessSource::new(sample_receiver, channel_count, sample_rate);
+-
+-        let audio_recorder = capture_audio.then(|| {
+-            process::Command::new("ffmpeg")
+-                .arg("-y")
+-                .arg("-f")
+-                .arg("f32le")
+-                .arg("-ar")
+-                .arg(sample_rate.to_string())
+-                .arg("-ac")
+-                .arg(channel_count.to_string())
+-                .arg("-i")
+-                .arg("-")
+-                .arg("capture.flac")
+-                .stdin(Stdio::piped())
+-                .stdout(Stdio::null())
+-                .stderr(Stdio::null())
+-                .spawn()
+-                .expect("Failed to open FFmpeg stdin")
+-        });
+-
+-        if capture_audio {
+-            std::thread::spawn(move || {
+-                let stream = session.open_output_stream(device).unwrap();
+-
+-                stream.play(interprocess_source).unwrap();
+-            });
+-
+-            return Self {
+-                mixer: Some(mixer),
+-                sample_sender: Some(sample_sender),
+-                mixer_handle,
+-                mixer_channel_count: channel_count,
+-                mixer_sample_rate: sample_rate,
+-                do_output,
+-                global_volume,
+-                end_times: HashMap::new(),
+-                multimedia_end: None,
+-                audio_recorder: audio_recorder,
+-            };
+-        } else {
+-            std::thread::spawn(move || {
+-                let stream = session.open_output_stream(device).unwrap();
+-
+-                stream.play(mixer).unwrap();
+-            });
+-
+-            Self {
+-                mixer: None,
+-                sample_sender: None,
+-                mixer_handle,
+-                mixer_channel_count: channel_count,
+-                mixer_sample_rate: sample_rate,
+-                do_output,
+-                global_volume,
+-                end_times: HashMap::new(),
+-                multimedia_end: None,
+-                audio_recorder: audio_recorder,
+-            }
++        Self {
++            mixer,
++            mixer_handle,
++            mixer_channel_count: channel_count,
++            mixer_sample_rate: sample_rate,
++            do_output,
++            global_volume,
++            end_times: HashMap::new(),
++            multimedia_end: None,
+         }
+     }
+ 
+-    pub fn capture_audio(&mut self) {
+-        if let Some(mixer) = &mut self.mixer {
+-            // samplerate / framerate * channels
+-            const AUDIO_SAMPLES_PER_FRAME: usize = 48000 / 50 * 2;
+-            let mut audio_output: [Sample; AUDIO_SAMPLES_PER_FRAME] = [0.0; AUDIO_SAMPLES_PER_FRAME];
+-
+-            let stdin = self.audio_recorder.as_mut().unwrap().stdin.as_mut().expect("Failed to open stdin");
+-            mixer.write_samples(&mut audio_output);
+-
+-            unsafe {
+-                let samples = std::slice::from_raw_parts(audio_output.as_ptr() as *const u8, audio_output.len() * 4);
+-                stdin.write_all(samples).unwrap();
+-            }
+-
+-            if let Some(sample_sender) = &self.sample_sender {
+-                audio_output.iter().for_each(|s| {
+-                    sample_sender.send(*s).unwrap();
+-                })
+-            }
+-        }
++    /// Mixes the next `buffer.len()` samples (interleaved) of what is playing.
++    pub fn mix(&mut self, buffer: &mut [Sample]) {
++        let _ = self.mixer.write_samples(buffer);
+     }
+ 
+-    pub fn stop_audio_capture(&mut self) {
+-        if let Some(recorder) = self.audio_recorder.take() {
+-            recorder.wait_with_output().expect("audio recorder should close");
+-        }
+-    }
++    pub fn capture_audio(&mut self) {}
++
++    pub fn stop_audio_capture(&mut self) {}
+ 
+     pub fn add_mp3(&mut self, file: Box<[u8]>, sound_id: i32) -> Option<Mp3Handle> {
+         Mp3Player::new(file).map(|player| Mp3Handle { player, id: sound_id }).ok()

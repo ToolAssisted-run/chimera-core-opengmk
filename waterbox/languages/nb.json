@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 er ikke et starttidspunkt denne kjernen tar imot.",
+		"error.bad_game": "Filen kunne ikke leses som et GameMaker 8-spill: %1",
+		"error.bad_seed": "%1 er ikke et tilfeldig frø denne kjernen tar imot.",
+		"error.launch": "Spillet kunne ikke starte: %1",
+		"error.no_file": "Det er ikke noe spill i prosjektet.",
+		"error.not_read": "%1 kunne ikke leses: %2",
+		"error.save_entry": "%1 i lagringsdataene kunne ikke leses: %2",
+		"error.save_not_zip": "Lagringsdataene er ikke en zip: %1",
+		"error.settings_not_json": "Innstillingene er ikke JSON: %1",
+		"error.settings_not_object": "Innstillingene er ikke et JSON-objekt.",
+		"setting.randomseed": "Tilfeldig frø",
+		"setting.randomseed.about": "Tallet kjernens tilfeldige tall starter fra. Et spill som kaller randomize(), henter frøet sitt fra denne rekken og ikke fra datamaskinen din, så samme frø og samme inndata gir samme spill. Det er en del av maskinen, så en film trenger samme verdi.",
+		"setting.starttime": "Startklokke",
+		"setting.starttime.about": "Datoen og klokkeslettet spillet leser ved start, i UTC. GameMakers dato- og tidsfunksjoner svarer ut fra det, og det går deretter videre med spillet, aldri med datamaskinen din. Standard er 1. januar 2010. Det er en del av maskinen, så en film trenger samme verdi.",
+		"slot.game": "Spill",
+		"slot.game.help": "Et spill laget med GameMaker 8.0 eller 8.1: .exe-filen skaperen ga ut. Spill laget med GameMaker Studio eller nyere kjører ikke her.",
+		"slot.savedata": "Lagringsdata",
+		"slot.savedata.help": "Det spillet allerede har lagret, slik Emulator > Eksporter lagringsdata... skrev det: en .zip av filene spillet skrev. De legges der spillet finner filene sine før det starter."
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 はこのコアが受け付ける開始時刻ではありません。",
+		"error.bad_game": "このファイルは GameMaker 8 のゲームとして読めませんでした: %1",
+		"error.bad_seed": "%1 はこのコアが受け付ける乱数シードではありません。",
+		"error.launch": "ゲームを開始できませんでした: %1",
+		"error.no_file": "プロジェクトにゲームがありません。",
+		"error.not_read": "%1 を読み込めませんでした: %2",
+		"error.save_entry": "セーブデータの %1 を読み込めませんでした: %2",
+		"error.save_not_zip": "セーブデータは zip ではありません: %1",
+		"error.settings_not_json": "設定は JSON ではありません: %1",
+		"error.settings_not_object": "設定は JSON オブジェクトではありません。",
+		"setting.randomseed": "乱数シード",
+		"setting.randomseed.about": "コアの乱数が始まる数。randomize() を呼ぶゲームは、お使いのコンピューターではなくこの数列からシードを取るので、同じシードと同じ入力なら同じプレイになります。マシンの一部なので、ムービーにも同じ値が必要です。",
+		"setting.starttime": "開始時計",
+		"setting.starttime.about": "ゲームが開始時に読む日付と時刻 (UTC)。GameMaker の日付・時刻関数はこれをもとに答え、その後はゲームとともに進み、お使いのコンピューターの時計には従いません。既定は 2010 年 1 月 1 日です。マシンの一部なので、ムービーにも同じ値が必要です。",
+		"slot.game": "ゲーム",
+		"slot.game.help": "GameMaker 8.0 または 8.1 で作られたゲーム: 作者が公開した .exe。GameMaker Studio 以降で作られたゲームはここでは動きません。",
+		"slot.savedata": "セーブデータ",
+		"slot.savedata.help": "ゲームがすでに保存したもの。エミュレーター > セーブデータのエクスポート... が書き出した、ゲームが書いたファイルの .zip です。開始前に、ゲームが自分のファイルを見つける場所に置かれます。"
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 ei ole aloitusaika, jonka tämä ydin hyväksyy.",
+		"error.bad_game": "Tiedostoa ei voitu lukea GameMaker 8 -pelinä: %1",
+		"error.bad_seed": "%1 ei ole satunnaislukujen siemen, jonka tämä ydin hyväksyy.",
+		"error.launch": "Peliä ei voitu käynnistää: %1",
+		"error.no_file": "Projektissa ei ole peliä.",
+		"error.not_read": "Tiedostoa %1 ei voitu lukea: %2",
+		"error.save_entry": "Tallennustietojen %1 ei voitu lukea: %2",
+		"error.save_not_zip": "Tallennustiedot eivät ole zip: %1",
+		"error.settings_not_json": "Asetukset eivät ole JSON-muotoa: %1",
+		"error.settings_not_object": "Asetukset eivät ole JSON-olio.",
+		"setting.randomseed": "Satunnaissiemen",
+		"setting.randomseed.about": "Luku, josta ytimen satunnaisluvut alkavat. Peli, joka kutsuu randomize(), ottaa siemenensä tästä jonosta eikä tietokoneestasi, joten sama siemen ja samat syötteet tuottavat saman pelin. Se kuuluu koneeseen, joten elokuva tarvitsee saman arvon.",
+		"setting.starttime": "Alkukello",
+		"setting.starttime.about": "Päivämäärä ja kellonaika, jonka peli lukee käynnistyessään, UTC-aikana. GameMakerin päivämäärä- ja aikafunktiot vastaavat siitä, ja se kulkee sitten pelin mukana, ei koskaan tietokoneesi. Oletus on 1. tammikuuta 2010. Se kuuluu koneeseen, joten elokuva tarvitsee saman arvon.",
+		"slot.game": "Peli",
+		"slot.game.help": "GameMaker 8.0:lla tai 8.1:llä tehty peli: tekijän julkaisema .exe. GameMaker Studiolla tai uudemmalla tehdyt pelit eivät toimi täällä.",
+		"slot.savedata": "Tallennustiedot",
+		"slot.savedata.help": "Se, minkä peli on jo tallentanut, sellaisena kuin Emulaattori > Vie tallennustiedot... sen kirjoitti: zip pelin kirjoittamista tiedostoista. Ne sijoitetaan ennen käynnistystä sinne, mistä peli löytää tiedostonsa."
+	}
+}

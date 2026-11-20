@@ -1,0 +1,150 @@
+diff --git a/chimera-shims/ramen/Cargo.toml b/chimera-shims/ramen/Cargo.toml
+new file mode 100644
+index 00000000..daf3434e
+--- /dev/null
++++ b/chimera-shims/ramen/Cargo.toml
+@@ -0,0 +1,8 @@
++[package]
++name = "ramen"
++version = "0.0.3"
++edition = "2021"
++description = "Stands in for the windowing crate ramen in Chimera's core: no window exists, nothing here does anything. Only the types and calls OpenGMK's emulator makes."
++license = "GPL-2.0-only"
++
++[dependencies]
+diff --git a/chimera-shims/ramen/src/lib.rs b/chimera-shims/ramen/src/lib.rs
+new file mode 100644
+index 00000000..3c90a5f3
+--- /dev/null
++++ b/chimera-shims/ramen/src/lib.rs
+@@ -0,0 +1,130 @@
++//! A window that is not there. OpenGMK's emulator draws into a window and
++//! reads its keyboard and mouse from it; in Chimera's core the picture is
++//! Mesa's own buffer and the controls come from the frontend, so every call
++//! here is empty. The names are the real crate's, so the emulator's code
++//! needs no change where it touches them.
++
++pub mod connection {
++    pub struct Connection;
++    impl Connection {
++        pub fn new() -> Result<Self, String> {
++            Ok(Connection)
++        }
++        pub fn builder(&self) -> crate::window::Builder {
++            crate::window::Builder::default()
++        }
++    }
++}
++
++pub mod event {
++    use crate::input::{Key, MouseButton};
++
++    #[derive(Copy, Clone, Debug)]
++    pub enum Event {
++        KeyboardDown(Key),
++        KeyboardUp(Key),
++        MouseMove((i32, i32)),
++        MouseDown(MouseButton),
++        MouseUp(MouseButton),
++        ScrollUp,
++        ScrollDown,
++        Resize((u32, u32)),
++        CloseRequest,
++    }
++}
++
++pub mod input {
++    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
++    pub enum MouseButton {
++        Left,
++        Right,
++        Middle,
++    }
++
++    #[derive(Copy, Clone, Debug, PartialEq, Eq)]
++    pub enum Key {
++        A,Alpha0,Alpha1,Alpha2,Alpha3,Alpha4,Alpha5,Alpha6,Alpha7,Alpha8,Alpha9,Applications,Attn,B,Backspace,BrowserBack,BrowserFavourites,BrowserForward,BrowserHome,BrowserRefresh,BrowserSearch,BrowserStop,C,CapsLock,Clear,Comma,CrSel,D,Delete,DownArrow,E,End,EraseEof,Escape,Execute,ExSel,F,F1,F10,F11,F12,F13,F14,F15,F16,F17,F18,F19,F2,F20,F21,F22,F23,F24,F3,F4,F5,F6,F7,F8,F9,G,H,Help,Home,I,ImeAccept,ImeConvert,ImeFinal,ImeHanjaOrKanji,ImeJunja,ImeKanaOrHangul,ImeModeChangeRequest,ImeNonConvert,ImeOff,ImeOn,ImeProcess,Insert,J,K,Keypad0,Keypad1,Keypad2,Keypad3,Keypad4,Keypad5,Keypad6,Keypad7,Keypad8,Keypad9,KeypadAdd,KeypadDecimal,KeypadDivide,KeypadMultiply,KeypadSeparator,KeypadSubtract,L,LaunchApplication1,LaunchApplication2,LaunchMail,LaunchMediaSelect,LeftAlt,LeftArrow,LeftControl,LeftShift,LeftSuper,M,MediaNextTrack,MediaPlayPause,MediaPreviousTrack,MediaStop,MediaVolumeDown,MediaVolumeMute,MediaVolumeUp,Minus,N,NumLock,O,Oem102,OemClear,P,Pa1,PageDown,PageUp,Pause,Period,Play,Plus,Print,PrintScreen,Q,R,Return,RightAlt,RightArrow,RightControl,RightShift,RightSuper,S,ScrollLock,Select,Slash,Sleep,Space,T,Tab,U,UpArrow,V,W,X,Y,Z,Zoom,
++    }
++}
++
++pub mod window {
++    use crate::event::Event;
++
++    #[derive(Copy, Clone, Debug)]
++    pub enum Cursor {
++        Arrow,
++        Cross,
++        IBeam,
++        ResizeNESW,
++        ResizeNS,
++        ResizeNWSE,
++        ResizeWE,
++        Wait,
++        Unavailable,
++        Progress,
++        Help,
++        Hand,
++        ResizeAll,
++        Blank,
++    }
++
++    #[derive(Copy, Clone, Default)]
++    pub struct Controls;
++    impl Controls {
++        pub fn new() -> Self {
++            Controls
++        }
++        pub fn minimise(self, _on: bool) -> Self {
++            self
++        }
++        pub fn maximise(self, _on: bool) -> Self {
++            self
++        }
++    }
++
++    #[derive(Default)]
++    pub struct Builder;
++    impl Builder {
++        pub fn class_name(self, _: &str) -> Self {
++            self
++        }
++        pub fn visible(self, _: bool) -> Self {
++            self
++        }
++        pub fn size(self, _: (i32, i32)) -> Self {
++            self
++        }
++        pub fn borderless(self, _: bool) -> Self {
++            self
++        }
++        pub fn title(self, _: String) -> Self {
++            self
++        }
++        pub fn resizable(self, _: bool) -> Self {
++            self
++        }
++        pub fn controls(self, _: Option<Controls>) -> Self {
++            self
++        }
++        pub fn build(self) -> Result<Window, String> {
++            Ok(Window)
++        }
++    }
++
++    pub struct Window;
++    impl Window {
++        pub fn set_visible(&self, _: bool) {}
++        pub fn set_borderless(&self, _: bool) {}
++        pub fn set_resizable(&self, _: bool) {}
++        pub fn set_title(&self, _: &str) {}
++        pub fn set_size(&self, _: (i32, i32)) {}
++        pub fn set_cursor(&self, _: Cursor) {}
++        pub fn xid(&self) -> u32 {
++            0
++        }
++        pub fn poll_events(&mut self) {}
++        pub fn events(&self) -> &[Event] {
++            &[]
++        }
++    }
++}

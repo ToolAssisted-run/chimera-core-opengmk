@@ -1,0 +1,3 @@
+[submodule "extern/OpenGMK"]
+	path = extern/OpenGMK
+	url = https://github.com/OpenGMK/OpenGMK.git

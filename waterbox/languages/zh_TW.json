@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 不是此核心接受的起始時間。",
+		"error.bad_game": "無法將該檔案讀作 GameMaker 8 遊戲：%1",
+		"error.bad_seed": "%1 不是此核心接受的隨機種子。",
+		"error.launch": "遊戲無法啟動：%1",
+		"error.no_file": "專案中沒有遊戲。",
+		"error.not_read": "無法讀取 %1：%2",
+		"error.save_entry": "無法讀取存檔資料中的 %1：%2",
+		"error.save_not_zip": "存檔資料不是 zip：%1",
+		"error.settings_not_json": "設定不是 JSON：%1",
+		"error.settings_not_object": "設定不是 JSON 物件。",
+		"setting.randomseed": "隨機種子",
+		"setting.randomseed.about": "核心的隨機數開始的數字。呼叫 randomize() 的遊戲從這個序列而不是你的電腦取得種子，所以相同的種子和相同的輸入會得到相同的遊戲。它是機器的一部分，所以影片需要相同的值。",
+		"setting.starttime": "起始時鐘",
+		"setting.starttime.about": "遊戲啟動時讀取的日期和時間（UTC）。GameMaker 的日期和時間函式據此作答，之後時鐘隨遊戲前進，而不隨你的電腦。預設是 2010 年 1 月 1 日。它是機器的一部分，所以影片需要相同的值。",
+		"slot.game": "遊戲",
+		"slot.game.help": "用 GameMaker 8.0 或 8.1 製作的遊戲：其作者發布的 .exe。用 GameMaker Studio 或更新版本製作的遊戲無法在此執行。",
+		"slot.savedata": "存檔資料",
+		"slot.savedata.help": "遊戲已經儲存的內容，即「模擬器 > 匯出存檔資料…」寫出的內容：遊戲所寫檔案的 .zip。啟動前它們會被放到遊戲尋找自己檔案的位置。"
+	}
+}

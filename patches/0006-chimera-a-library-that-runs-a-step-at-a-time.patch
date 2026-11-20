@@ -1,0 +1,981 @@
+diff --git a/gm8emulator/Cargo.toml b/gm8emulator/Cargo.toml
+index 2e124915..cc95af1d 100644
+--- a/gm8emulator/Cargo.toml
++++ b/gm8emulator/Cargo.toml
+@@ -5,7 +5,10 @@ authors = ["The OpenGMK Project Developers"]
+ license = "GPL-2.0-only"
+ edition = "2021"
+ rust-version = "1.77"
+-default-run = "gm8emulator"
++
++[lib]
++name = "gm8emulator"
++path = "src/lib.rs"
+ 
+ [build-dependencies]
+ gl_generator = "0.14"
+@@ -16,7 +19,6 @@ winres = "0.1"
+ [dependencies]
+ bincode = "1.3.3"
+ byteorder = "1.5"
+-clipboard = "0.5"
+ encoding_rs = "0.8"
+ getopts = "0.2"
+ getrandom = "0.2"  # 0.3.4
+@@ -25,22 +27,17 @@ gm8exe = { path = "../gm8exe" }
+ gml-parser = { path = "../gml-parser", features = ["runner-serde-derives"] }
+ hex = "0.4"
+ image = { version = "0.25.6", features = ["bmp", "gif", "ico", "jpeg", "png", "tga", "tiff"], default-features = false }
+-imgui = { version = "0.12", features = ["tables-api"] }
+ indexmap = { version = "2.5.0", features = ["serde"] }  # 2.11.4
+ lzzzz = "2.0"
+ phf = { version = "0.13", features = ["macros"] }
+-ramen = { git = "https://github.com/viriuwu/ramen", features = ["input", "parking-lot"] }
++ramen = { path = "../chimera-shims/ramen" }
+ rect_packer = "0.2"
+ rmp3 = { version = "0.3", features = ["float"] }
+ rust-ini = "0.21"
+ serde = { version = "1.0", features = ["derive", "rc"] }
+ serde_with = { version = "3.16.1", features = ["alloc", "macros"], default-features = false }
+ time = { version = "0.3.41", features = ["local-offset", "macros"] }
+-udon = { git = "https://github.com/Adamcake/udon", features = ["serde-derives", "wav"] }
+-
+-[target.'cfg(all(target_os = "windows"))'.dependencies]
+-crc32fast = "1.5"
+-libffi = "3.1.0"
++udon = { path = "../chimera-shims/udon", features = ["serde-derives", "wav"] }
+ 
+ [target.'cfg(unix)'.dependencies]
+ libc = "0.2"
+diff --git a/gm8emulator/src/game.rs b/gm8emulator/src/game.rs
+index bcf855fd..f95ffbf7 100644
+--- a/gm8emulator/src/game.rs
++++ b/gm8emulator/src/game.rs
+@@ -10,7 +10,6 @@ pub mod movement;
+ pub mod particle;
+ pub mod pathfinding;
+ pub mod platform;
+-pub mod recording;
+ pub mod replay;
+ pub mod savestate;
+ pub mod surface;
+@@ -62,7 +61,6 @@ use std::{
+     borrow::Cow,
+     cell::{Cell, RefCell},
+     collections::{BTreeMap, HashMap, HashSet, VecDeque},
+-    fs::File,
+     io::Write,
+     path::PathBuf,
+     process::{Child, Command, Stdio},
+@@ -342,8 +340,8 @@ impl Game {
+         // Parse file path
+         let mut file_path2 = file_path.clone();
+         file_path2.pop();
+-        // Game Maker doesn't change working directory on load but doing it anyway makes life easier
+-        std::env::set_current_dir(&file_path2)?;
++        // (The runner used to move into the game's folder here. A machine has one
++        // folder, the one it starts in, and no call to change it.)
+         let mut param_string: &str = &file_path.to_string_lossy();
+         let mut program_directory: &str = &file_path2.to_string_lossy();
+ 
+@@ -431,7 +429,7 @@ impl Game {
+             None => {
+                 // read path from tempdir.txt or if that's not possible get std::env::temp_dir()
+                 let mut dir = if let Some(path) =
+-                    std::fs::read("tempdir.txt").ok().and_then(decode_str_maybe).map(|path| PathBuf::from(path))
++                    crate::memfs::read("tempdir.txt").ok().and_then(decode_str_maybe).map(|path| PathBuf::from(path))
+                 {
+                     path
+                 } else {
+@@ -448,7 +446,7 @@ impl Game {
+                         folder += &rand.next_int(99999).to_string();
+                         path.push(&folder);
+                     }
+-                    std::fs::create_dir_all(path)
++                    Ok::<(), std::io::Error>(())
+                 };
+                 // try making folders
+                 if let Err(e) = make_temp_dir(&mut dir) {
+@@ -597,15 +595,7 @@ impl Game {
+         let window_icons = !settings.dont_show_buttons;
+ 
+         let connection = ramen::connection::Connection::new()?;
+-        #[cfg(unix)]
+-        unsafe {
+-            let display = connection.xdisplay();
+-            let screen = connection.xscreenid();
+-            crate::render::opengl::glx::glx_init(display, screen);
+-        }
+-
+-        #[allow(unused_mut)]
+-        let mut builder = connection
++        let builder = connection
+             .builder()
+             .class_name("OpenGMK")
+             .visible(false)
+@@ -625,13 +615,6 @@ impl Game {
+                 None
+             });
+ 
+-        // if unix... pass visual...
+-        #[cfg(unix)]
+-        unsafe {
+-            let glx = crate::render::opengl::glx::GLX.as_ref().unwrap();
+-            builder = builder.depth(glx.depth).visual(glx.visual);
+-        }
+-
+         let window = builder.build()?;
+         let ffmpeg_recorder = capture_recording.then(|| {
+             Command::new("ffmpeg")
+@@ -692,7 +675,6 @@ impl Game {
+         );
+         for extension in extensions.iter() {
+             temp_directory.push(&*String::from_utf8_lossy(extension.folder_name.0.as_ref()));
+-            std::fs::create_dir_all(&temp_directory)?;
+ 
+             for file in extension.files.iter() {
+                 match file.kind {
+@@ -701,7 +683,7 @@ impl Game {
+                         let dll_name = gml::String::from(file.name.0.clone().as_ref());
+                         temp_directory.push(&*String::from_utf8_lossy(dll_name.as_ref()));
+ 
+-                        File::create(&temp_directory)?.write_all(&file.contents)?;
++                        crate::memfs::File::create(&temp_directory)?.write_all(&file.contents)?;
+                         for function in file.functions.iter() {
+                             let dll = &*temp_directory.to_string_lossy();
+                             let symbol = gml::String::from(if function.external_name.0.len() == 0 {
+@@ -795,7 +777,7 @@ impl Game {
+                     FileKind::Other => {
+                         // Other - just save this to disk
+                         temp_directory.push(&*String::from_utf8_lossy(file.name.0.as_ref()));
+-                        let mut f = File::create(&temp_directory)?;
++                        let mut f = crate::memfs::File::create(&temp_directory)?;
+                         f.write_all(&file.contents)?;
+                         temp_directory.pop();
+                     },
+@@ -1853,7 +1835,7 @@ impl Game {
+         use std::io::Read;
+         self.input.keyboard_clear_all();
+         self.input.mouse_clear_all();
+-        let mut file = std::fs::File::open(path)
++        let mut file = crate::memfs::File::open(path)
+             .map(std::io::BufReader::new)
+             .map_err(|e| gml::Error::FunctionError("game_load".into(), format!("{}", e)))?;
+         let mut magnum = [0u8; 4];
+@@ -2265,6 +2247,60 @@ impl Game {
+         }
+     }
+ 
++    /// Chimera's core: gets the game ready to run its first frame (what `run`
++    /// does before its loop).
++    pub fn chimera_start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
++        self.init()?;
++        self.chimera_scene_change()?;
++        Ok(())
++    }
++
++    /// Does what the end of a step does with a scene change; false when the
++    /// game has ended.
++    fn chimera_scene_change(&mut self) -> Result<bool, Box<dyn std::error::Error>> {
++        match self.scene_change {
++            Some(SceneChange::Room(id)) => self.load_room(id)?,
++            Some(SceneChange::Restart) => self.restart()?,
++            Some(SceneChange::End) => {
++                self.run_game_end_events()?;
++                return Ok(false);
++            },
++            Some(SceneChange::Load(ref mut path)) => {
++                let path = std::mem::take(path);
++                self.load_gm_save(path)?
++            },
++            None => (),
++        }
++        Ok(true)
++    }
++
++    /// Chimera's core: one step of the game, the body of `run`'s loop without
++    /// the window, the frame limiter or the host's clock. The caller has set
++    /// the controls through `set_input`, which is called after the mouse has
++    /// moved on from the last step. False when the game has ended.
++    pub fn chimera_step(
++        &mut self,
++        set_input: impl FnOnce(&mut Input),
++    ) -> Result<bool, Box<dyn std::error::Error>> {
++        self.input.mouse_step();
++        set_input(&mut self.input);
++        self.frame()?;
++        if !self.chimera_scene_change()? {
++            return Ok(false);
++        }
++        if self.close_requested {
++            self.run_game_end_events()?;
++            return Ok(false);
++        }
++        let duration = Duration::from_nanos(1_000_000_000 / self.room.speed.max(1) as u64);
++        if let GameClock::SpoofedNanos(t) = &mut self.clock {
++            *t += duration.as_nanos();
++        }
++        self.fps = self.room.speed;
++        self.frame_counter += 1;
++        Ok(true)
++    }
++
+     fn capture_recording_frame(&mut self, current_frame_time: &mut u32, game_speed: u32) {
+         if let Some(ffmpeg_recorder) = self.ffmpeg_recorder.as_mut() {
+             while *current_frame_time < 50 {
+diff --git a/gm8emulator/src/input.rs b/gm8emulator/src/input.rs
+index 6770fbc7..594714a3 100644
+--- a/gm8emulator/src/input.rs
++++ b/gm8emulator/src/input.rs
+@@ -847,166 +847,6 @@ impl TryFrom<ramen::input::Key> for Button {
+     }
+ }
+ 
+-pub fn ramen2imgui(key: ramen::input::Key) -> Option<imgui::Key> {
+-    match key {
+-        // ramen::input::Key::Attn => Some(imgui::Key::Attn),
+-        ramen::input::Key::LeftAlt => Some(imgui::Key::LeftAlt),
+-        ramen::input::Key::RightAlt => Some(imgui::Key::RightAlt),
+-        ramen::input::Key::Applications => Some(imgui::Key::Menu),
+-        ramen::input::Key::Backspace => Some(imgui::Key::Backspace),
+-        ramen::input::Key::CapsLock => Some(imgui::Key::CapsLock),
+-        // ramen::input::Key::Clear => Some(imgui::Key::Clear),
+-        ramen::input::Key::LeftControl => Some(imgui::Key::LeftCtrl),
+-        ramen::input::Key::RightControl => Some(imgui::Key::RightCtrl),
+-        // ramen::input::Key::CrSel => Some(imgui::Key::CrSel),
+-        ramen::input::Key::Delete => Some(imgui::Key::Delete),
+-        ramen::input::Key::End => Some(imgui::Key::End),
+-        ramen::input::Key::Return => Some(imgui::Key::Enter),
+-        // ramen::input::Key::EraseEof => Some(imgui::Key::EraseEof),
+-        ramen::input::Key::Escape => Some(imgui::Key::Escape),
+-        // ramen::input::Key::Execute => Some(imgui::Key::Execute),
+-        // ramen::input::Key::ExSel => Some(imgui::Key::ExSel),
+-        // ramen::input::Key::Help => Some(imgui::Key::Help),
+-        ramen::input::Key::Home => Some(imgui::Key::Home),
+-        ramen::input::Key::Insert => Some(imgui::Key::Insert),
+-        ramen::input::Key::NumLock => Some(imgui::Key::NumLock),
+-        // ramen::input::Key::Pa1 => Some(imgui::Key::Pa1),
+-        ramen::input::Key::PageUp => Some(imgui::Key::PageUp),
+-        ramen::input::Key::PageDown => Some(imgui::Key::PageDown),
+-        ramen::input::Key::Pause => Some(imgui::Key::Pause),
+-        // ramen::input::Key::Play => Some(imgui::Key::MediaPlay),
+-        // ramen::input::Key::Print => Some(imgui::Key::PrintScreen),
+-        ramen::input::Key::PrintScreen => Some(imgui::Key::PrintScreen),
+-        ramen::input::Key::LeftShift => Some(imgui::Key::LeftShift),
+-        ramen::input::Key::RightShift => Some(imgui::Key::RightShift),
+-        ramen::input::Key::ScrollLock => Some(imgui::Key::ScrollLock),
+-        // ramen::input::Key::Select => Some(imgui::Key::Select),
+-        // ramen::input::Key::Sleep => Some(imgui::Key::Sleep),
+-        ramen::input::Key::Space => Some(imgui::Key::Space),
+-        ramen::input::Key::LeftSuper => Some(imgui::Key::LeftSuper),
+-        ramen::input::Key::RightSuper => Some(imgui::Key::RightSuper),
+-        ramen::input::Key::Tab => Some(imgui::Key::Tab),
+-        // ramen::input::Key::Zoom => Some(imgui::Key::Zoom),
+-        ramen::input::Key::LeftArrow => Some(imgui::Key::LeftArrow),
+-        ramen::input::Key::UpArrow => Some(imgui::Key::UpArrow),
+-        ramen::input::Key::RightArrow => Some(imgui::Key::RightArrow),
+-        ramen::input::Key::DownArrow => Some(imgui::Key::DownArrow),
+-        ramen::input::Key::Alpha0 => Some(imgui::Key::Alpha0),
+-        ramen::input::Key::Alpha1 => Some(imgui::Key::Alpha1),
+-        ramen::input::Key::Alpha2 => Some(imgui::Key::Alpha2),
+-        ramen::input::Key::Alpha3 => Some(imgui::Key::Alpha3),
+-        ramen::input::Key::Alpha4 => Some(imgui::Key::Alpha4),
+-        ramen::input::Key::Alpha5 => Some(imgui::Key::Alpha5),
+-        ramen::input::Key::Alpha6 => Some(imgui::Key::Alpha6),
+-        ramen::input::Key::Alpha7 => Some(imgui::Key::Alpha7),
+-        ramen::input::Key::Alpha8 => Some(imgui::Key::Alpha8),
+-        ramen::input::Key::Alpha9 => Some(imgui::Key::Alpha9),
+-        ramen::input::Key::A => Some(imgui::Key::A),
+-        ramen::input::Key::B => Some(imgui::Key::B),
+-        ramen::input::Key::C => Some(imgui::Key::C),
+-        ramen::input::Key::D => Some(imgui::Key::D),
+-        ramen::input::Key::E => Some(imgui::Key::E),
+-        ramen::input::Key::F => Some(imgui::Key::F),
+-        ramen::input::Key::G => Some(imgui::Key::G),
+-        ramen::input::Key::H => Some(imgui::Key::H),
+-        ramen::input::Key::I => Some(imgui::Key::I),
+-        ramen::input::Key::J => Some(imgui::Key::J),
+-        ramen::input::Key::K => Some(imgui::Key::K),
+-        ramen::input::Key::L => Some(imgui::Key::L),
+-        ramen::input::Key::M => Some(imgui::Key::M),
+-        ramen::input::Key::N => Some(imgui::Key::N),
+-        ramen::input::Key::O => Some(imgui::Key::O),
+-        ramen::input::Key::P => Some(imgui::Key::P),
+-        ramen::input::Key::Q => Some(imgui::Key::Q),
+-        ramen::input::Key::R => Some(imgui::Key::R),
+-        ramen::input::Key::S => Some(imgui::Key::S),
+-        ramen::input::Key::T => Some(imgui::Key::T),
+-        ramen::input::Key::U => Some(imgui::Key::U),
+-        ramen::input::Key::V => Some(imgui::Key::V),
+-        ramen::input::Key::W => Some(imgui::Key::W),
+-        ramen::input::Key::X => Some(imgui::Key::X),
+-        ramen::input::Key::Y => Some(imgui::Key::Y),
+-        ramen::input::Key::Z => Some(imgui::Key::Z),
+-        ramen::input::Key::Comma => Some(imgui::Key::Comma),
+-        ramen::input::Key::Minus => Some(imgui::Key::Minus),
+-        ramen::input::Key::Period => Some(imgui::Key::Period),
+-        ramen::input::Key::Slash => Some(imgui::Key::Slash),
+-        // ramen::input::Key::Plus => Some(imgui::Key::KeypadAdd),
+-        // ramen::input::Key::Oem102 => Some(imgui::Key::Oem102),
+-        // ramen::input::Key::OemClear => Some(imgui::Key::OemClear),
+-        ramen::input::Key::KeypadAdd => Some(imgui::Key::KeypadAdd),
+-        ramen::input::Key::KeypadSubtract => Some(imgui::Key::KeypadSubtract),
+-        ramen::input::Key::KeypadMultiply => Some(imgui::Key::KeypadMultiply),
+-        ramen::input::Key::KeypadDivide => Some(imgui::Key::KeypadDivide),
+-        ramen::input::Key::KeypadDecimal => Some(imgui::Key::KeypadDecimal),
+-        // ramen::input::Key::KeypadSeparator => Some(imgui::Key::KeypadSeparator),
+-        ramen::input::Key::Keypad0 => Some(imgui::Key::Keypad0),
+-        ramen::input::Key::Keypad1 => Some(imgui::Key::Keypad1),
+-        ramen::input::Key::Keypad2 => Some(imgui::Key::Keypad2),
+-        ramen::input::Key::Keypad3 => Some(imgui::Key::Keypad3),
+-        ramen::input::Key::Keypad4 => Some(imgui::Key::Keypad4),
+-        ramen::input::Key::Keypad5 => Some(imgui::Key::Keypad5),
+-        ramen::input::Key::Keypad6 => Some(imgui::Key::Keypad6),
+-        ramen::input::Key::Keypad7 => Some(imgui::Key::Keypad7),
+-        ramen::input::Key::Keypad8 => Some(imgui::Key::Keypad8),
+-        ramen::input::Key::Keypad9 => Some(imgui::Key::Keypad9),
+-        ramen::input::Key::F1 => Some(imgui::Key::F1),
+-        ramen::input::Key::F2 => Some(imgui::Key::F2),
+-        ramen::input::Key::F3 => Some(imgui::Key::F3),
+-        ramen::input::Key::F4 => Some(imgui::Key::F4),
+-        ramen::input::Key::F5 => Some(imgui::Key::F5),
+-        ramen::input::Key::F6 => Some(imgui::Key::F6),
+-        ramen::input::Key::F7 => Some(imgui::Key::F7),
+-        ramen::input::Key::F8 => Some(imgui::Key::F8),
+-        ramen::input::Key::F9 => Some(imgui::Key::F9),
+-        ramen::input::Key::F10 => Some(imgui::Key::F10),
+-        ramen::input::Key::F11 => Some(imgui::Key::F11),
+-        ramen::input::Key::F12 => Some(imgui::Key::F12),
+-        // ramen::input::Key::F13 => Some(imgui::Key::F13),
+-        // ramen::input::Key::F14 => Some(imgui::Key::F14),
+-        // ramen::input::Key::F15 => Some(imgui::Key::F15),
+-        // ramen::input::Key::F16 => Some(imgui::Key::F16),
+-        // ramen::input::Key::F17 => Some(imgui::Key::F17),
+-        // ramen::input::Key::F18 => Some(imgui::Key::F18),
+-        // ramen::input::Key::F19 => Some(imgui::Key::F19),
+-        // ramen::input::Key::F20 => Some(imgui::Key::F20),
+-        // ramen::input::Key::F21 => Some(imgui::Key::F21),
+-        // ramen::input::Key::F22 => Some(imgui::Key::F22),
+-        // ramen::input::Key::F23 => Some(imgui::Key::F23),
+-        // ramen::input::Key::F24 => Some(imgui::Key::F24),
+-        // ramen::input::Key::BrowserBack => Some(imgui::Key::BrowserBack),
+-        // ramen::input::Key::BrowserFavourites => Some(imgui::Key::BrowserFavourites),
+-        // ramen::input::Key::BrowserForward => Some(imgui::Key::BrowserForward),
+-        // ramen::input::Key::BrowserHome => Some(imgui::Key::BrowserHome),
+-        // ramen::input::Key::BrowserRefresh => Some(imgui::Key::BrowserRefresh),
+-        // ramen::input::Key::BrowserSearch => Some(imgui::Key::BrowserSearch),
+-        // ramen::input::Key::BrowserStop => Some(imgui::Key::BrowserStop),
+-        // ramen::input::Key::ImeAccept => Some(imgui::Key::ImeAccept),
+-        // ramen::input::Key::ImeConvert => Some(imgui::Key::ImeConvert),
+-        // ramen::input::Key::ImeNonConvert => Some(imgui::Key::ImeNonConvert),
+-        // ramen::input::Key::ImeFinal => Some(imgui::Key::ImeFinal),
+-        // ramen::input::Key::ImeModeChangeRequest => Some(imgui::Key::ImeModeChangeRequest),
+-        // ramen::input::Key::ImeProcess => Some(imgui::Key::ImeProcess),
+-        // ramen::input::Key::ImeOn => Some(imgui::Key::ImeOn),
+-        // ramen::input::Key::ImeOff => Some(imgui::Key::ImeOff),
+-        // ramen::input::Key::ImeKanaOrHangul => Some(imgui::Key::ImeKanaOrHangul),
+-        // ramen::input::Key::ImeHanjaOrKanji => Some(imgui::Key::ImeHanjaOrKanji),
+-        // ramen::input::Key::ImeJunja => Some(imgui::Key::ImeJunja),
+-        // ramen::input::Key::MediaNextTrack => Some(imgui::Key::MediaNextTrack),
+-        // ramen::input::Key::MediaPreviousTrack => Some(imgui::Key::MediaPreviousTrack),
+-        // ramen::input::Key::MediaPlayPause => Some(imgui::Key::MediaPlayPause),
+-        // ramen::input::Key::MediaStop => Some(imgui::Key::MediaStop),
+-        // ramen::input::Key::MediaVolumeDown => Some(imgui::Key::MediaVolumeDown),
+-        // ramen::input::Key::MediaVolumeUp => Some(imgui::Key::MediaVolumeUp),
+-        // ramen::input::Key::MediaVolumeMute => Some(imgui::Key::MediaVolumeMute),
+-        // ramen::input::Key::LaunchApplication1 => Some(imgui::Key::LaunchApp1),
+-        // ramen::input::Key::LaunchApplication2 => Some(imgui::Key::LaunchApp2),
+-        // ramen::input::Key::LaunchMail => Some(imgui::Key::LaunchMail),
+-        // ramen::input::Key::LaunchMediaSelect => Some(imgui::Key::LaunchMedia),
+-        _ => None,
+-    }
+-}
+-
+ pub fn ramen2vk(x: ramen::input::Key) -> u8 {
+     Button::try_from(x).map(|e| e as u8).unwrap_or(0)
+ }
+diff --git a/gm8emulator/src/lib.rs b/gm8emulator/src/lib.rs
+new file mode 100644
+index 00000000..5875cd6b
+--- /dev/null
++++ b/gm8emulator/src/lib.rs
+@@ -0,0 +1,20 @@
++//! OpenGMK's GameMaker 8 runner as a library, for Chimera's core: no window,
++//! no sound device, no recording interface. The core (waterbox/guest in the
++//! core's repository) builds a Game from an executable and calls `frame`.
++
++pub mod action;
++pub mod asset;
++pub mod game;
++pub mod gml;
++pub mod handleman;
++pub mod input;
++pub mod instance;
++pub mod instancelist;
++pub mod math;
++pub mod memfs;
++pub mod render;
++pub mod tile;
++pub mod types;
++pub mod util;
++
++pub use game::{Game, GameClock, PlayType};
+diff --git a/gm8emulator/src/main.rs b/gm8emulator/src/main.rs
+deleted file mode 100644
+index 1f4cded0..00000000
+--- a/gm8emulator/src/main.rs
++++ /dev/null
+@@ -1,294 +0,0 @@
+-mod action;
+-mod asset;
+-mod game;
+-mod gml;
+-mod handleman;
+-mod imgui_key_utils;
+-mod imgui_utils;
+-mod input;
+-mod instance;
+-mod instancelist;
+-mod math;
+-mod render;
+-mod tile;
+-mod types;
+-mod util;
+-
+-use game::{
+-    savestate::{self, SaveState},
+-    Game, GameClock, PlayType, Replay,
+-};
+-use std::{
+-    env, fs,
+-    path::{Path, PathBuf},
+-    process,
+-};
+-
+-const EXIT_SUCCESS: i32 = 0;
+-const EXIT_FAILURE: i32 = 1;
+-
+-fn help(argv0: &str, opts: getopts::Options) {
+-    print!(
+-        "{}",
+-        opts.usage(&format!(
+-            "Usage: {} FILE [options]",
+-            match Path::new(argv0).file_name() {
+-                Some(file) => file.to_str().unwrap_or(argv0),
+-                None => argv0,
+-            }
+-        ))
+-    );
+-}
+-
+-fn main() {
+-    process::exit(xmain());
+-}
+-
+-fn xmain() -> i32 {
+-    let args: Vec<String> = env::args().collect();
+-    let process = args[0].clone();
+-
+-    let mut opts = getopts::Options::new();
+-    opts.optflag("h", "help", "prints this help message");
+-    opts.optflag("s", "strict", "enable various data integrity checks");
+-    opts.optflag("t", "singlethread", "parse gamedata synchronously");
+-    opts.optflag("v", "verbose", "enables verbose logging");
+-    opts.optflag("r", "realtime", "disables clock spoofing");
+-    opts.optflag("c", "capture", "captures a recording");
+-    opts.optflagopt("l", "no-framelimit-until", "disables the frame-limiter until specified frame", "FRAME");
+-    opts.optopt("n", "project-name", "name of TAS project to create or load", "NAME");
+-    opts.optopt("f", "replay-file", "path to savestate file to replay", "FILE");
+-    opts.optopt("o", "output-file", "output savestate name in replay mode", "FILE.bin");
+-    opts.optmulti("a", "game-arg", "argument to pass to the game", "ARG");
+-    opts.optflagopt("p", "start-save", "Either loads the savestate specified after this parameter or starts at the first frame. If a .gmtas is specified by -f this will start the replay from this savestate instead", "savestate");
+-
+-    let matches = match opts.parse(&args[1..]) {
+-        Ok(matches) => matches,
+-        Err(fail) => {
+-            use getopts::Fail::*;
+-            match fail {
+-                ArgumentMissing(arg) => eprintln!("missing argument {}", arg),
+-                UnrecognizedOption(opt) => eprintln!("unrecognized option {}", opt),
+-                OptionMissing(opt) => eprintln!("missing option {}", opt),
+-                OptionDuplicated(opt) => eprintln!("duplicated option {}", opt),
+-                UnexpectedArgument(arg) => eprintln!("unexpected argument {}", arg),
+-            }
+-            return EXIT_FAILURE;
+-        },
+-    };
+-
+-    if args.len() < 2 || matches.opt_present("h") {
+-        help(&process, opts);
+-        return EXIT_SUCCESS;
+-    }
+-
+-    let strict = matches.opt_present("s");
+-    let multithread = !matches.opt_present("t");
+-    let spoof_time = !matches.opt_present("r");
+-    let capture_recording = matches.opt_present("c");
+-    let frame_limit_at = matches
+-        .opt_str("l")
+-        .map(|frame| match frame.parse::<usize>() {
+-            Ok(f) => f,
+-            Err(e) => {
+-                panic!("{}", e);
+-            },
+-        })
+-        .unwrap_or(0);
+-    let frame_limiter = !matches.opt_present("l");
+-    let verbose = matches.opt_present("v");
+-    let output_bin = matches.opt_str("o").map(PathBuf::from);
+-    let pause = matches.opt_present("p");
+-    let start_save_path = matches.opt_str("p").map(PathBuf::from);
+-    let project_path = matches.opt_str("n").map(|name| {
+-        let mut p = env::current_dir().expect("std::env::current_dir() failed");
+-        p.push("projects");
+-        p.push(name);
+-        p
+-    });
+-
+-    if let Some(bin) = &output_bin {
+-        if bin.extension().and_then(|x| x.to_str()) != Some("bin") {
+-            eprintln!("invalid output file for -o: must be a .bin file");
+-            return EXIT_FAILURE;
+-        }
+-    }
+-
+-    let temp_dir = project_path.as_ref().map(|proj_path| {
+-        // attempt to find temp dir in project path
+-        std::fs::read_dir(proj_path)
+-            .ok()
+-            .and_then(|iter| {
+-                iter.filter_map(|x| x.ok())
+-                    .find(|p| {
+-                        p.metadata().ok().filter(|p| p.is_dir()).is_some()
+-                            && p.file_name().to_str().filter(|s| s.starts_with("gm_ttt_")).is_some()
+-                    })
+-                    .map(|entry| entry.path())
+-            })
+-            // if we can't find one, make one
+-            .unwrap_or_else(|| {
+-                let mut random_int = [0u8; 4];
+-                getrandom::getrandom(&mut random_int).expect("Couldn't generate a random number");
+-                let path = [proj_path.clone(), format!("gm_ttt_{}", u32::from_le_bytes(random_int) % 100000).into()]
+-                    .iter()
+-                    .collect();
+-                if let Err(e) = std::fs::create_dir_all(&path) {
+-                    println!("Could not create temp folder: {}", e);
+-                    println!("If this game uses the temp folder, it will most likely crash.");
+-                }
+-                path
+-            })
+-    });
+-    let can_clear_temp_dir = temp_dir.is_none();
+-    let replay = match matches
+-        .opt_str("f")
+-        .map(|filename| {
+-            let filepath = PathBuf::from(&filename);
+-            match filepath.extension().and_then(|x| x.to_str()) {
+-                Some("bin") => match SaveState::from_file(&filepath, &mut savestate::Buffer::new()) {
+-                    Ok(state) => Ok(state.into_replay()),
+-                    Err(e) => Err(format!("couldn't load {:?}: {:?}", filepath, e)),
+-                },
+-
+-                Some("gmtas") => match Replay::from_file(&filepath) {
+-                    Ok(replay) => Ok(replay),
+-                    Err(e) => Err(format!("couldn't load {:?}: {:?}", filepath, e)),
+-                },
+-
+-                _ => Err("unknown filetype for -f, expected '.bin' or '.gmtas'".into()),
+-            }
+-        })
+-        .transpose()
+-    {
+-        Ok(r) => r,
+-        Err(e) => {
+-            eprintln!("{}", e);
+-            return EXIT_FAILURE;
+-        },
+-    };
+-
+-    let input = {
+-        if matches.free.len() == 1 {
+-            &matches.free[0]
+-        } else if matches.free.len() > 1 {
+-            eprintln!("unexpected second input {}", matches.free[1]);
+-            return EXIT_FAILURE;
+-        } else {
+-            eprintln!("no input file");
+-            return EXIT_FAILURE;
+-        }
+-    };
+-
+-    let mut game_args = matches.opt_strs("game-arg");
+-    game_args.insert(0, input.to_string());
+-    let game_args = game_args;
+-
+-    let file_path = Path::new(&input);
+-
+-    let mut file = match fs::read(file_path) {
+-        Ok(data) => data,
+-        Err(err) => {
+-            eprintln!("failed to open '{}': {}", input, err);
+-            return EXIT_FAILURE;
+-        },
+-    };
+-
+-    if verbose {
+-        println!("loading '{}'...", input);
+-    }
+-
+-    #[rustfmt::skip]
+-    let assets = gm8exe::reader::from_exe(
+-        &mut file,                              // mut exe: AsRef<[u8]>
+-        if verbose {                            // logger: Option<Fn(&str)>
+-            Some(|s: &str| println!("{}", s))
+-        } else {
+-            None
+-        },
+-        strict,                                 // strict: bool
+-        multithread,                            // multithread: bool
+-    );
+-    let assets = match assets {
+-        Ok(assets) => assets,
+-        Err(err) => {
+-            eprintln!("failed to load '{}' - {}", input, err);
+-            return EXIT_FAILURE;
+-        },
+-    };
+-
+-    let absolute_path = match file_path.canonicalize() {
+-        Ok(p) => p,
+-        Err(e) => {
+-            eprintln!("Failed to resolve game path: {}", e);
+-            return EXIT_FAILURE;
+-        },
+-    };
+-
+-    let encoding = encoding_rs::SHIFT_JIS; // TODO: argument
+-
+-    let play_type = if project_path.is_some() {
+-        PlayType::Record
+-    } else if replay.is_some() {
+-        PlayType::Replay
+-    } else {
+-        PlayType::Normal
+-    };
+-
+-    let mut components = match Game::launch(
+-        assets,
+-        absolute_path,
+-        game_args,
+-        temp_dir,
+-        encoding,
+-        frame_limiter,
+-        frame_limit_at,
+-        capture_recording,
+-        play_type,
+-    ) {
+-        Ok(g) => g,
+-        Err(e) => {
+-            eprintln!("Failed to launch game: {}", e);
+-            return EXIT_FAILURE;
+-        },
+-    };
+-
+-    let time_now = GameClock::SpoofedNanos(gml::datetime::now_as_nanos());
+-
+-    if let Err(err) = if let Some(path) = project_path {
+-        components.clock = time_now;
+-        components.record(path, pause, start_save_path.as_ref());
+-        Ok(())
+-    } else {
+-        // cache temp_dir and included files because the other functions take ownership
+-        let temp_dir: Option<PathBuf> = if can_clear_temp_dir {
+-            Some(components.decode_str(components.temp_directory.as_ref()).into_owned().into())
+-        } else {
+-            None
+-        };
+-        let files_to_delete = components
+-            .included_files
+-            .iter()
+-            .filter(|i| i.remove_at_end)
+-            .map(|i| PathBuf::from(components.decode_str(i.name.as_ref()).into_owned()))
+-            .collect::<Vec<_>>();
+-        let result = if let Some(replay) = replay {
+-            components.replay(replay, output_bin, start_save_path.as_ref())
+-        } else {
+-            components.clock = if spoof_time { time_now } else { GameClock::StartupEpoch(std::time::Instant::now()) };
+-            components.run()
+-        };
+-        for file in files_to_delete.into_iter() {
+-            std::fs::remove_file(file).ok();
+-        }
+-        if let Some(temp_dir) = temp_dir {
+-            std::fs::remove_dir_all(temp_dir).ok();
+-        }
+-        result
+-    } {
+-        println!("Runtime error: {}", err);
+-        EXIT_FAILURE
+-    } else {
+-        EXIT_SUCCESS
+-    }
+-}
+diff --git a/gm8emulator/src/memfs.rs b/gm8emulator/src/memfs.rs
+new file mode 100644
+index 00000000..7a7fac2b
+--- /dev/null
++++ b/gm8emulator/src/memfs.rs
+@@ -0,0 +1,253 @@
++//! The files a game writes and reads, kept in the machine's own memory.
++//!
++//! A game saves with file_text_open_write, ini_open, file_bin_open and the
++//! like. In Chimera's core those files are never on a disk: they live here,
++//! so a savestate carries them, a replay writes them again exactly, and the
++//! core can list them for Export Save Data. A file that was not written here
++//! is read from the files the project mounted (the game's own folder).
++//!
++//! The calls and flags are the standard library's (`File`, `OpenOptions`), so
++//! the code that used those needs no change but its imports.
++
++use std::{
++    collections::BTreeMap,
++    io::{self, Read, Seek, SeekFrom, Write},
++};
++
++/// Name (as the game wrote it, with `/` for `\` and without a leading `./`) to
++/// contents. A sorted map: what the core lists never depends on an address.
++static mut FILES: BTreeMap<String, Vec<u8>> = BTreeMap::new();
++
++#[allow(static_mut_refs)]
++fn files() -> &'static mut BTreeMap<String, Vec<u8>> {
++    unsafe { &mut FILES }
++}
++
++fn text(path: &impl AsRef<std::path::Path>) -> String {
++    path.as_ref().to_string_lossy().into_owned()
++}
++
++fn key(path: &str) -> String {
++    let p = path.replace('\\', "/");
++    let mut p = p.as_str();
++    while let Some(rest) = p.strip_prefix("./") {
++        p = rest;
++    }
++    p.to_string()
++}
++
++/// The files the game has written, by name.
++pub fn written() -> Vec<(String, Vec<u8>)> {
++    files().iter().map(|(k, v)| (k.clone(), v.clone())).collect()
++}
++
++/// Puts a file as the game would have written it (the save data of an earlier
++/// session).
++pub fn put(path: &str, contents: Vec<u8>) {
++    files().insert(key(path), contents);
++}
++
++/// Whether the game has written the file, or the project mounted it.
++pub fn exists(path: impl AsRef<std::path::Path>) -> bool {
++    let path = text(&path);
++    files().contains_key(&key(&path)) || std::path::Path::new(&path).is_file()
++}
++
++pub fn read(path: impl AsRef<std::path::Path>) -> io::Result<Vec<u8>> {
++    let path = text(&path);
++    match files().get(&key(&path)) {
++        Some(data) => Ok(data.clone()),
++        None => std::fs::read(&path),
++    }
++}
++
++pub fn remove(path: impl AsRef<std::path::Path>) -> io::Result<()> {
++    files().remove(&key(&text(&path)));
++    Ok(())
++}
++
++pub fn rename(from: impl AsRef<std::path::Path>, to: impl AsRef<std::path::Path>) -> io::Result<()> {
++    let data = read(&from)?;
++    files().remove(&key(&text(&from)));
++    files().insert(key(&text(&to)), data);
++    Ok(())
++}
++
++pub fn copy(from: impl AsRef<std::path::Path>, to: impl AsRef<std::path::Path>) -> io::Result<u64> {
++    let data = read(&from)?;
++    let n = data.len() as u64;
++    files().insert(key(&text(&to)), data);
++    Ok(n)
++}
++
++#[derive(Clone, Default)]
++pub struct OpenOptions {
++    read: bool,
++    write: bool,
++    append: bool,
++    create: bool,
++    create_new: bool,
++    truncate: bool,
++}
++
++impl OpenOptions {
++    pub fn new() -> Self {
++        Self::default()
++    }
++    pub fn read(&mut self, v: bool) -> &mut Self {
++        self.read = v;
++        self
++    }
++    pub fn write(&mut self, v: bool) -> &mut Self {
++        self.write = v;
++        self
++    }
++    pub fn append(&mut self, v: bool) -> &mut Self {
++        self.append = v;
++        self
++    }
++    pub fn create(&mut self, v: bool) -> &mut Self {
++        self.create = v;
++        self
++    }
++    pub fn create_new(&mut self, v: bool) -> &mut Self {
++        self.create_new = v;
++        self
++    }
++    pub fn truncate(&mut self, v: bool) -> &mut Self {
++        self.truncate = v;
++        self
++    }
++
++    pub fn open(&self, path: impl AsRef<std::path::Path>) -> io::Result<File> {
++        let path = text(&path);
++        let path = path.as_str();
++        let k = key(path);
++        let there = files().contains_key(&k);
++        if self.create_new && (there || exists(path)) {
++            return Err(io::Error::from(io::ErrorKind::AlreadyExists));
++        }
++        if !there {
++            if self.create || self.create_new {
++                files().insert(k.clone(), Vec::new());
++            } else {
++                // not written: a file the project brought, read-only
++                if self.write || self.append {
++                    return Err(io::Error::from(io::ErrorKind::NotFound));
++                }
++                let data = std::fs::read(path)?;
++                files().insert(k.clone(), data);
++                return Ok(File { key: k, pos: 0, read: true, write: false, append: false, mounted: true });
++            }
++        }
++        if self.truncate && self.write {
++            files().get_mut(&k).unwrap().clear();
++        }
++        Ok(File { key: k, pos: 0, read: self.read, write: self.write || self.append, append: self.append, mounted: false })
++    }
++}
++
++#[derive(Debug)]
++pub struct File {
++    key: String,
++    pos: u64,
++    read: bool,
++    write: bool,
++    append: bool,
++    /// copied in from the project's files to be read: not the game's to keep
++    mounted: bool,
++}
++
++pub struct Metadata {
++    len: u64,
++}
++impl Metadata {
++    pub fn len(&self) -> u64 {
++        self.len
++    }
++}
++
++impl File {
++    pub fn open(path: impl AsRef<std::path::Path>) -> io::Result<File> {
++        OpenOptions::new().read(true).open(path)
++    }
++    pub fn create(path: impl AsRef<std::path::Path>) -> io::Result<File> {
++        OpenOptions::new().write(true).create(true).truncate(true).open(path)
++    }
++    pub fn set_len(&mut self, len: u64) -> io::Result<()> {
++        if !self.write {
++            return Err(io::Error::from(io::ErrorKind::PermissionDenied));
++        }
++        files().entry(self.key.clone()).or_default().resize(len as usize, 0);
++        Ok(())
++    }
++    pub fn metadata(&self) -> io::Result<Metadata> {
++        Ok(Metadata { len: files().get(&self.key).map_or(0, |d| d.len() as u64) })
++    }
++}
++
++impl Drop for File {
++    fn drop(&mut self) {
++        // a project file read through here was never the game's: do not keep it
++        if self.mounted {
++            files().remove(&self.key);
++        }
++    }
++}
++
++impl Read for File {
++    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
++        if !self.read {
++            return Err(io::Error::from(io::ErrorKind::PermissionDenied));
++        }
++        let data = match files().get(&self.key) {
++            Some(d) => d,
++            None => return Ok(0),
++        };
++        let start = (self.pos as usize).min(data.len());
++        let n = buf.len().min(data.len() - start);
++        buf[..n].copy_from_slice(&data[start..start + n]);
++        self.pos += n as u64;
++        Ok(n)
++    }
++}
++
++impl Write for File {
++    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
++        if !self.write {
++            return Err(io::Error::from(io::ErrorKind::PermissionDenied));
++        }
++        let data = files().entry(self.key.clone()).or_default();
++        if self.append {
++            self.pos = data.len() as u64;
++        }
++        let start = self.pos as usize;
++        if data.len() < start {
++            data.resize(start, 0);
++        }
++        let overlap = (data.len() - start).min(buf.len());
++        data[start..start + overlap].copy_from_slice(&buf[..overlap]);
++        data.extend_from_slice(&buf[overlap..]);
++        self.pos += buf.len() as u64;
++        Ok(buf.len())
++    }
++    fn flush(&mut self) -> io::Result<()> {
++        Ok(())
++    }
++}
++
++impl Seek for File {
++    fn seek(&mut self, to: SeekFrom) -> io::Result<u64> {
++        let len = files().get(&self.key).map_or(0, |d| d.len() as i64);
++        let new = match to {
++            SeekFrom::Start(n) => n as i64,
++            SeekFrom::End(n) => len + n,
++            SeekFrom::Current(n) => self.pos as i64 + n,
++        };
++        if new < 0 {
++            return Err(io::Error::from(io::ErrorKind::InvalidInput));
++        }
++        self.pos = new as u64;
++        Ok(self.pos)
++    }
++}

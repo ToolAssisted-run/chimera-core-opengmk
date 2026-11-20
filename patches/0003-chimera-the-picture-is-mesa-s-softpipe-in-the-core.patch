@@ -1,0 +1,211 @@
+diff --git a/gm8emulator/src/render.rs b/gm8emulator/src/render.rs
+index 26fc611d..75dbaa70 100644
+--- a/gm8emulator/src/render.rs
++++ b/gm8emulator/src/render.rs
+@@ -3,6 +3,9 @@
+ pub mod atlas;
+ pub mod opengl;
+ 
++/// The picture Mesa drew: RGBA, top row first, width, height.
++pub use opengl::osmesa::screen as osmesa_screen;
++
+ use crate::types::Colour;
+ use atlas::{AtlasRect, AtlasRef};
+ use ramen::{connection::Connection, window::Window};
+diff --git a/gm8emulator/src/render/opengl.rs b/gm8emulator/src/render/opengl.rs
+index b977c245..179c8cf7 100644
+--- a/gm8emulator/src/render/opengl.rs
++++ b/gm8emulator/src/render/opengl.rs
+@@ -17,16 +17,8 @@ pub mod gl {
+ }
+ use gl::types::{GLchar, GLenum, GLint, GLsizei, GLuint};
+ 
+-#[cfg(target_os = "windows")]
+-mod wgl;
+-#[cfg(target_os = "windows")]
+-mod wgl_ffi;
+-#[cfg(target_os = "windows")]
+-use wgl as native_gl;
+-#[cfg(unix)]
+-pub mod glx;
+-#[cfg(unix)]
+-use glx as native_gl;
++pub mod osmesa;
++use osmesa as native_gl;
+ 
+ macro_rules! shader_file {
+     ($path: expr) => {
+@@ -393,7 +385,7 @@ impl ShapeBuilder {
+ impl RendererImpl {
+     pub fn new(options: &RendererOptions, connection: &Connection, window: &Window, clear_colour: Colour) -> Result<Self, String> {
+         unsafe {
+-            let imp = native_gl::PlatformImpl::new(connection, window)?;
++            let imp = native_gl::PlatformImpl::new(connection, window, options.size)?;
+ 
+             // gl function pointers
+             let gl = gl::Gl::load_with(native_gl::PlatformImpl::get_function_loader()?);
+@@ -2438,6 +2430,7 @@ impl RendererTrait for RendererImpl {
+             return
+         }
+         unsafe {
++            self.imp.resize(window_width, window_height);
+             // Finish drawing frame
+             self.flush_queue();
+ 
+@@ -2505,7 +2498,6 @@ impl RendererTrait for RendererImpl {
+                 if self.next_render_state.interpolate_pixels.into() { gl::LINEAR } else { gl::NEAREST },
+             );
+             assert_eq!(self.gl.GetError(), 0);
+-            self.gl.BindFramebuffer(gl::DRAW_FRAMEBUFFER, fb_old as u32);
+             assert_eq!(self.gl.GetError(), 0);
+ 
+             self.gl.Enable(gl::SCISSOR_TEST);
+@@ -2514,7 +2506,11 @@ impl RendererTrait for RendererImpl {
+ 
+             // Present buffer
+             // Note: Game Maker always presents the backbuffer, even when the target is a surface.
++            // (The window's framebuffer is the one bound while presenting: Mesa copies
++            // the picture out of a window only when it is the one being drawn to.)
+             self.imp.swap_buffers();
++            self.gl.BindFramebuffer(gl::DRAW_FRAMEBUFFER, fb_old as u32);
++            assert_eq!(self.gl.GetError(), 0);
+ 
+             // On Nvidia/AMD cards, unless the emulator is running in admin mode, if it is screenshared on Discord,
+             // SwapBuffers will return TRUE i.e. no error, but glGetError will return GL_INVALID_OPERATION.
+diff --git a/gm8emulator/src/render/opengl/osmesa.rs b/gm8emulator/src/render/opengl/osmesa.rs
+new file mode 100644
+index 00000000..95da77db
+--- /dev/null
++++ b/gm8emulator/src/render/opengl/osmesa.rs
+@@ -0,0 +1,131 @@
++//! The OpenGL Chimera's core draws with: Mesa's softpipe behind OSMesa, built
++//! into the core. There is no window and no graphics card; the default
++//! framebuffer is a block of the machine's own memory, so the picture is the
++//! same on every host and is part of a savestate.
++
++use ramen::{connection::Connection, window::Window};
++use std::{
++    ffi::{c_char, c_void},
++    sync::Mutex,
++};
++
++type OSMesaContext = *mut c_void;
++const OSMESA_RGBA: u32 = 0x1908;
++const GL_UNSIGNED_BYTE: u32 = 0x1401;
++const OSMESA_Y_UP: i32 = 0x11;
++
++extern "C" {
++    fn OSMesaCreateContextExt(
++        format: u32,
++        depth_bits: i32,
++        stencil_bits: i32,
++        accum_bits: i32,
++        sharelist: OSMesaContext,
++    ) -> OSMesaContext;
++    fn OSMesaDestroyContext(ctx: OSMesaContext);
++    fn OSMesaMakeCurrent(ctx: OSMesaContext, buffer: *mut c_void, type_: u32, width: i32, height: i32) -> u8;
++    fn OSMesaGetProcAddress(name: *const c_char) -> *const c_void;
++    fn OSMesaPixelStore(pname: i32, value: i32);
++}
++
++/// The screen: RGBA, the top row first.
++struct Screen {
++    pixels: Vec<u8>,
++    width: u32,
++    height: u32,
++}
++static SCREEN: Mutex<Screen> = Mutex::new(Screen { pixels: Vec::new(), width: 0, height: 0 });
++
++/// The screen as the game last presented it: its pixels (RGBA, top row
++/// first), width and height. Valid until the next present.
++pub fn screen() -> (&'static [u8], u32, u32) {
++    let s = SCREEN.lock().unwrap();
++    // the buffer is only replaced by resize(), which the machine calls between frames
++    let slice = unsafe { std::slice::from_raw_parts(s.pixels.as_ptr(), s.pixels.len()) };
++    (slice, s.width, s.height)
++}
++
++pub struct PlatformImpl {
++    ctx: OSMesaContext,
++}
++
++fn bind(ctx: OSMesaContext, width: u32, height: u32) -> Result<(), String> {
++    let mut s = SCREEN.lock().unwrap();
++    if s.width != width || s.height != height || s.pixels.is_empty() {
++        s.pixels = vec![0u8; (width as usize) * (height as usize) * 4];
++        s.width = width;
++        s.height = height;
++    }
++    unsafe {
++        let ok = OSMesaMakeCurrent(ctx, s.pixels.as_mut_ptr().cast(), GL_UNSIGNED_BYTE, width as i32, height as i32);
++        if ok == 0 {
++            return Err("OSMesaMakeCurrent failed".into());
++        }
++        // the first row of the buffer is the top of the picture
++        OSMesaPixelStore(OSMESA_Y_UP, 0);
++    }
++    Ok(())
++}
++
++impl PlatformImpl {
++    pub unsafe fn new(_connection: &Connection, _window: &Window, size: (u32, u32)) -> Result<Self, String> {
++        let ctx = OSMesaCreateContextExt(OSMESA_RGBA, 24, 8, 0, std::ptr::null_mut());
++        if ctx.is_null() {
++            return Err("OSMesaCreateContextExt failed".into());
++        }
++        bind(ctx, size.0.max(1), size.1.max(1))?;
++        Ok(PlatformImpl { ctx })
++    }
++
++    pub unsafe fn get_function_loader() -> Result<Box<dyn FnMut(&'static str) -> *const c_void>, String> {
++        Ok(Box::new(move |name: &'static str| {
++            let mut buf = Vec::with_capacity(name.len() + 1);
++            buf.extend_from_slice(name.as_bytes());
++            buf.push(0);
++            unsafe { OSMesaGetProcAddress(buf.as_ptr().cast()) }
++        }))
++    }
++
++    pub unsafe fn clean_function_loader() {}
++
++    /// The picture is in the buffer once OpenGL has finished it.
++    pub unsafe fn swap_buffers(&self) {
++        let finish = OSMesaGetProcAddress(b"glFinish\0".as_ptr().cast());
++        if !finish.is_null() {
++            std::mem::transmute::<*const c_void, extern "C" fn()>(finish)();
++        }
++        if std::env::var("OPENGMK_DEBUG_SWAP").is_ok() {
++            let s = SCREEN.lock().unwrap();
++            let nz = s.pixels.iter().filter(|&&b| b != 0).count();
++            eprintln!("swap: {}x{} nonzero bytes {} first {:?}", s.width, s.height, nz, &s.pixels[..8]);
++        }
++    }
++
++    /// The screen changes shape: OSMesa learns a buffer's size only when a
++    /// context is bound to it.
++    pub unsafe fn resize(&self, width: u32, height: u32) {
++        let (w, h) = {
++            let s = SCREEN.lock().unwrap();
++            (s.width, s.height)
++        };
++        if (w, h) != (width, height) {
++            let _ = bind(self.ctx, width, height);
++        }
++    }
++
++    pub unsafe fn set_swap_interval(&self, _n: u32) -> bool {
++        true
++    }
++
++    pub unsafe fn get_swap_interval(&self) -> u32 {
++        0
++    }
++
++    pub unsafe fn wait_vsync(&self) {}
++}
++
++impl Drop for PlatformImpl {
++    fn drop(&mut self) {
++        unsafe { OSMesaDestroyContext(self.ctx) }
++    }
++}

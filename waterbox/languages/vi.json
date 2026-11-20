@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "%1 không phải giờ bắt đầu mà lõi này chấp nhận.",
+		"error.bad_game": "Không đọc được tệp như một trò chơi GameMaker 8: %1",
+		"error.bad_seed": "%1 không phải hạt giống ngẫu nhiên mà lõi này chấp nhận.",
+		"error.launch": "Không khởi động được trò chơi: %1",
+		"error.no_file": "Dự án không có trò chơi nào.",
+		"error.not_read": "Không đọc được %1: %2",
+		"error.save_entry": "Không đọc được %1 trong dữ liệu lưu: %2",
+		"error.save_not_zip": "Dữ liệu lưu không phải zip: %1",
+		"error.settings_not_json": "Cài đặt không phải JSON: %1",
+		"error.settings_not_object": "Cài đặt không phải một đối tượng JSON.",
+		"setting.randomseed": "Hạt giống ngẫu nhiên",
+		"setting.randomseed.about": "Con số mà các số ngẫu nhiên của lõi bắt đầu từ đó. Trò chơi gọi randomize() lấy hạt giống từ dãy này chứ không phải từ máy tính của bạn, nên cùng hạt giống và cùng đầu vào cho ra cùng một ván chơi. Đây là một phần của máy, nên một video cần cùng giá trị.",
+		"setting.starttime": "Đồng hồ ban đầu",
+		"setting.starttime.about": "Ngày và giờ mà trò chơi đọc khi khởi động, theo UTC. Các hàm ngày giờ của GameMaker trả lời từ đó, rồi đồng hồ chạy tiếp cùng trò chơi, không bao giờ theo máy tính của bạn. Mặc định là ngày 1 tháng 1 năm 2010. Đây là một phần của máy, nên một video cần cùng giá trị.",
+		"slot.game": "Trò chơi",
+		"slot.game.help": "Một trò chơi làm bằng GameMaker 8.0 hoặc 8.1: tệp .exe do tác giả phát hành. Trò chơi làm bằng GameMaker Studio trở lên không chạy ở đây.",
+		"slot.savedata": "Dữ liệu lưu",
+		"slot.savedata.help": "Những gì trò chơi đã lưu, như Trình giả lập > Xuất dữ liệu lưu... đã ghi: một tệp .zip gồm các tệp mà trò chơi đã ghi. Chúng được đặt vào nơi trò chơi tìm tệp của nó trước khi bắt đầu."
+	}
+}

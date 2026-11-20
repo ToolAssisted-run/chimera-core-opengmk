@@ -1,0 +1,21 @@
+[package]
+name = "opengmk-run-native"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# The native reference: the core's own code (../guest) built for the host and
+# driven the way the engine drives core.wbx, with flags for every diagnostic.
+# It draws with the host build of the same pinned Mesa (setup-mesa.sh -n).
+[dependencies]
+opengmk_guest = { path = "../guest" }
+# --export-save writes the zip the frontend would
+zip = { version = "0.6.4", default-features = false, features = ["deflate"] }
+
+[[bin]]
+name = "run-native"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 2
+debug = 1

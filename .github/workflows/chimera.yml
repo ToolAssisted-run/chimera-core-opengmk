@@ -1,0 +1,165 @@
+name: chimera waterbox core
+
+# The core as Chimera ships it: a sandboxed core.wbx package.
+#
+# A GameMaker 8 game is the player's own, so no game is needed or fetched:
+# the tests run on a small game this repository makes itself (waterbox/tests/
+# mkgame: a GameMaker 8.1 executable written from nothing but this
+# repository's own code). Every test runs here: native == sandbox, savestates
+# every step and across hosts, the clock, the settings, sound, save data in
+# and out, what is refused, and the package in the engine. A real GameMaker 8
+# game is tried by hand, and docs/PLAN.md names which.
+#
+# It is a Rust core: the guest is built with a nightly toolchain against a
+# custom target. OpenGMK is the extern/OpenGMK submodule, patched into its
+# working tree at build time.
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+  schedule:
+    # 04:00 UTC. A nightly is published only when main moved since the last one;
+    # the reusable workflow checks, so an unchanged core costs one idle run.
+    - cron: '0 4 * * *'
+
+# Keyed by the EVENT as well as the ref: the nightly schedule and a push to
+# main are the same workflow on the same ref, so without it the one that starts
+# second cancels the first (see chimera-core-ruffle, 2026-09-12).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  CHIMERA_REF: main
+
+jobs:
+
+  gate:
+    name: "build and test (the builds, the test game, the package in the engine)"
+    # Ubuntu 24.04, not ubuntu-latest: on GitHub's 26.04 image GCC builds for
+    # x86-64-v3 (AVX2, FMA) by default, so a core built there would not run
+    # on an older processor and would round floating point differently
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Check out Chimera (the engine, chimera-run, and miniBox)
+        uses: actions/checkout@v6
+        with:
+          repository: ToolAssisted-run/chimera
+          ref: ${{ env.CHIMERA_REF }}
+          path: chimera-checkout
+          submodules: recursive
+
+      - name: Install build dependencies
+        # ffmpeg reads the engine test's screenshots; Chimera is built (the
+        # engine, chimera-run and its window) by tools/ci-chimera.sh.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends meson ninja-build build-essential cmake pkg-config python3 bison flex python3-mako python3-packaging ffmpeg libgl1-mesa-dev libx11-dev libxext-dev libasound2-dev
+
+      - name: "Rust (nightly: the guest needs -Z build-std, and the reference is built with the same)"
+        run: |
+          rustup toolchain install nightly --profile minimal -c rust-src
+          rustup default nightly
+          rustc --version && cargo --version
+
+      - name: Cache Qt
+        uses: actions/cache@v4
+        with:
+          path: ~/qt
+          key: qt-6.12.0-linux-aqt-3.3.0
+
+      - name: Build Chimera (the engine, chimera-run and the window)
+        run: chimera-checkout/tools/ci-chimera.sh "$HOME/qt"
+
+      - name: Build miniBox (host + C++ guest toolchain)
+        run: |
+          mb="$PWD/chimera-checkout/extern/chimera-common-minibox"
+          [ -f "$mb/build/meson-linux/build.ninja" ] || meson setup "$mb/build/meson-linux" "$mb"
+          meson compile -C "$mb/build/meson-linux"
+          [ -f "$mb/build/meson-cpp/build.ninja" ] || meson setup "$mb/build/meson-cpp" "$mb" -Dguest_cpp=true
+          meson compile -C "$mb/build/meson-cpp"
+
+      - name: Cache Mesa (both flavors)
+        # setup-mesa.sh pins the release by SHA256 and its options are in the
+        # script, so the script IS the key.
+        uses: actions/cache@v4
+        with:
+          path: build/mesa
+          key: mesa-24.0.9-${{ runner.os }}-${{ hashFiles('waterbox/setup-mesa.sh') }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/.git') }}
+
+      - name: Build and install the core package
+        # The commit is the core's authoritative version: this build is the one
+        # that publishes the artifact, so what it stamps is what a movie can
+        # cite. A package built by hand stamps "+local" instead.
+        env:
+          CORE_VERSION: ${{ github.sha }}
+        run: ./waterbox/build-package.sh -m "$PWD/chimera-checkout/extern/chimera-common-minibox" -r "$PWD/chimera-checkout"
+
+      - name: Run the test script
+        # Without -n it builds what the package build did not: the host Mesa,
+        # the native reference, run-wbx and the test game. Every kind of test
+        # must have passed, so one that stopped running cannot go unnoticed.
+        run: |
+          set +e
+          ./waterbox/run-gate.sh -m "$PWD/chimera-checkout/extern/chimera-common-minibox" -r "$PWD/chimera-checkout" > gate.out 2>&1
+          rc=$?
+          set -e
+          cat gate.out
+          [ "$rc" -eq 0 ]
+          for t in "native == sandbox" "native twice" "the host stalling" "a savestate saved" "the state moved" "the keys and the pointer" "another random seed" "the game's date" "the tone at the start" "the files the game writes" "a file that is not" "the engine: the package"; do
+            grep -q "^PASS $t" gate.out || { echo "$t did not pass"; exit 1; }
+          done
+
+      - name: Run the frontend test
+        # the package played by chimera-run and by Chimera's window, run
+        # headless, each last picture the native reference's
+        run: ./waterbox/tests/run-frontend.sh --chimera-root chimera-checkout
+
+      - name: The package through Chimera's contract tests
+        # Readable, built for an ABI this frontend runs, a working factory,
+        # binding only buttons its controller declares, a stamped version.
+        env:
+          CHIMERA_CORES_DIR: ${{ github.workspace }}/chimera-checkout/build/Cores
+        run: chimera-checkout/build/meson-linux/source/ui/test-packages
+
+      - name: Publish the core package
+        uses: actions/upload-artifact@v7
+        with:
+          name: opengmk-${{ github.sha }}
+          path: chimera-checkout/build/Cores/opengmk.chimeraCore
+          if-no-files-found: error
+
+      - name: Upload the gate work dir on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gate-work
+          path: |
+            build/gate/
+            build/guest-build.log
+          retention-days: 14
+
+  publish:
+    # What the gate passed, published as this core's own release: an immutable
+    # `nightly-YYYY-MM-DD` from the scheduled run, or from one started by hand.
+    # A push to main publishes nothing. Chimera ships no cores and downloads
+    # none: a user downloads the package from here and puts it in Chimera's
+    # Cores folder.
+    name: publish
+    needs: [ gate ]
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+    uses: ToolAssisted-run/chimera/.github/workflows/publish-core.yml@main
+    with:
+      core-id: opengmk
+      artifact: opengmk-${{ github.sha }}
+      package: opengmk.chimeraCore

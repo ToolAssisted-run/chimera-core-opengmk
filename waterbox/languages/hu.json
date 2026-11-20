@@ -1,0 +1,22 @@
+{
+	"texts": {
+		"error.bad_clock": "A(z) %1 nem olyan kezdőidő, amelyet ez a mag elfogad.",
+		"error.bad_game": "A fájlt nem lehetett GameMaker 8 játékként beolvasni: %1",
+		"error.bad_seed": "A(z) %1 nem olyan véletlen mag, amelyet ez a mag elfogad.",
+		"error.launch": "A játék nem indulhatott el: %1",
+		"error.no_file": "Nincs játék a projektben.",
+		"error.not_read": "A(z) %1 nem olvasható: %2",
+		"error.save_entry": "A mentett adatok %1 eleme nem olvasható: %2",
+		"error.save_not_zip": "A mentett adatok nem zip: %1",
+		"error.settings_not_json": "A beállítások nem JSON-ok: %1",
+		"error.settings_not_object": "A beállítások nem JSON-objektum.",
+		"setting.randomseed": "Véletlen mag",
+		"setting.randomseed.about": "A szám, amelyből a mag véletlen számai indulnak. Az a játék, amely a randomize() függvényt hívja, ebből a sorozatból veszi a magját, nem a számítógépedről, így ugyanaz a mag és ugyanazok a bemenetek ugyanazt a játékot adják. A gép része, ezért a filmnek ugyanez az érték kell.",
+		"setting.starttime": "Kezdő óra",
+		"setting.starttime.about": "A dátum és az idő, amelyet a játék induláskor olvas, UTC-ben. A GameMaker dátum- és időfüggvényei ebből válaszolnak, és ezután a játékkal együtt halad, soha nem a számítógépeddel. Az alapértelmezés 2010. január 1. A gép része, ezért a filmnek ugyanez az érték kell.",
+		"slot.game": "Játék",
+		"slot.game.help": "GameMaker 8.0-val vagy 8.1-gyel készült játék: a készítője által közzétett .exe. A GameMaker Studióval vagy újabbal készült játékok itt nem futnak.",
+		"slot.savedata": "Mentett adatok",
+		"slot.savedata.help": "Amit a játék már elmentett, úgy, ahogy az Emulátor > Mentett adatok exportálása... kiírta: a játék által írt fájlok .zip-je. Indulás előtt oda kerülnek, ahol a játék a fájljait keresi."
+	}
+}

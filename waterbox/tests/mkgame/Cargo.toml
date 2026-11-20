@@ -1,0 +1,19 @@
+[package]
+name = "mkgame"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Makes the core's own test game: a small GameMaker 8.1 executable made from
+# nothing but the GML written in src/main.rs and one generated tone. It is
+# this repository's own work (no one else's art, sound or code), so it may be
+# kept and run anywhere. OpenGMK's reader (gm8exe) is what the game is built
+# against: the assets are written with gm8exe's own serializers.
+[dependencies]
+gm8exe = { path = "../../../extern/OpenGMK/gm8exe" }
+byteorder = "1.5"
+flate2 = "1.1"
+
+[[bin]]
+name = "mkgame"
+path = "src/main.rs"
