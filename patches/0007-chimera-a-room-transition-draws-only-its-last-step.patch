@@ -1,0 +1,23 @@
+diff --git a/gm8emulator/src/game.rs b/gm8emulator/src/game.rs
+index f95ffbf..7932ea1 100644
+--- a/gm8emulator/src/game.rs
++++ b/gm8emulator/src/game.rs
+@@ -1785,8 +1785,16 @@ impl Game {
+                                 0.0,
+                             );
+                         }
+-                        transition(self, trans_surf_old, trans_surf_new, width as _, height as _, progress)?;
+-                        if self.play_type != PlayType::Record {
++                        // Chimera: only the last step is drawn. The sandbox hands over one
++                        // picture per step, so the steps before it are never seen, and in
++                        // the software renderer each is a full-window draw (81 of them, 11
++                        // to 25 s for the default transition). The game's clock still moves
++                        // by every step, below, so the game cannot tell.
++                        let draw_this_step = i == self.transition_steps;
++                        if draw_this_step {
++                            transition(self, trans_surf_old, trans_surf_new, width as _, height as _, progress)?;
++                        }
++                        if draw_this_step && self.play_type != PlayType::Record {
+                             self.renderer.present(width, height, self.scaling);
+                             self.capture_recording_frame(&mut current_frame_time, TRANSITION_FRAMERATE);
+                             let diff = current_time.elapsed();
