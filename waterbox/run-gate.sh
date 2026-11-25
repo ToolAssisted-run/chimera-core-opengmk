@@ -125,7 +125,7 @@ run_wbx() { box "$wbx" "$core" "$game" "$@" 2> /dev/null; }
 run_native --frames 300 --digest-every 30 "${route[@]}" > "$work/n.out"
 run_wbx --frames 300 --digest-every 30 "${route[@]}" > "$work/w.out"
 
-tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented standin nolibrary engine)
+tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented standin nolibrary extunused extcalled extstandin engine)
 for t in "${tests[@]}"; do
 	if [ "$breaking" = 1 ]; then BREAK="$t"; else BREAK=""; fi
 	case "$t" in
@@ -321,6 +321,83 @@ for t in "${tests[@]}"; do
 			{ [ -z "$out_e" ] || [ "$out_e" = "1/1" ]; } && ok=1
 		verdict nolibrary "$ok" "a game that calls a library the core cannot run gets a sentence naming it, not a panic" \
 			"step: native $out_n, sandbox $out_w; start: native $start_n, sandbox $start_w; panic text $bad${out_e:+; chimera-run $out_e}"
+		;;
+	# ------------------------------------------------ a Windows library inside an extension
+	extunused)
+		# A game that carries a GameMaker extension holding a Windows library the
+		# core cannot run (mystery.dll), and never calls it, starts and runs as
+		# the game without the extension does: the same digests in the native
+		# reference and the sandbox, and the same as the plain game's (the
+		# extension changes nothing it holds), and the log says the function was
+		# passed over. When the test is being broken the sandbox is given a
+		# different route.
+		egame="$build/content/extunused.exe"
+		"$mkgame" "$egame" ext:mystery.dll:Foo > /dev/null
+		"$native" "$egame" --frames 100 --digest-every 20 > "$work/extunused.n" 2> "$work/extunused.n.err"
+		box "$wbx" "$core" "$egame" --frames 100 --digest-every 20 $(sabotage extunused) > "$work/extunused.w" 2> "$work/extunused.w.err"
+		run_native --frames 100 --digest-every 20 > "$work/extunused.plain"
+		n="$(digest "$work/extunused.n" | wc -l)"
+		warned="$(grep -c -F "WARNING: extension function ext_Foo" "$work/extunused.n")"
+		said="$(cat "$work"/extunused.*.err | grep -c -E "Windows library|panicked|wow64|current_exe")"
+		ok=0
+		[ "$n" = 6 ] && [ "$warned" -ge 1 ] && [ "$said" = 0 ] && diff <(digest "$work/extunused.n") <(digest "$work/extunused.w") > /dev/null &&
+			diff <(digest "$work/extunused.n") <(digest "$work/extunused.plain") > /dev/null && ok=1
+		verdict extunused "$ok" "a game with an extension holding a library the core cannot run, never calling it, starts and runs as before" \
+			"$n digests; passed over with a warning: $warned; sentences or panics: $said"
+		;;
+	extcalled)
+		# The same game, calling the library's function at its tenth step: the
+		# machine stops with the sentence naming the library and the function
+		# (the function's name in the library, not the one GML calls it by), in
+		# the native reference, the sandbox and chimera-run, with no panic or
+		# helper-program text. When the test is being broken the game does not
+		# call it.
+		said="This game calls a Windows library (mystery.dll, function Foo), which this core cannot run."
+		cgame="$build/content/extcalled.exe"
+		if [ "$breaking" = 1 ]; then "$mkgame" "$cgame" ext:mystery.dll:Foo > /dev/null; else "$mkgame" "$cgame" extcall:mystery.dll:Foo > /dev/null; fi
+		"$native" "$cgame" --frames 60 > "$work/extcalled.n.out" 2> "$work/extcalled.n"
+		box "$wbx" "$core" "$cgame" --frames 60 > "$work/extcalled.w.out" 2> "$work/extcalled.w"
+		out_n="$(grep -c -F "$said" "$work/extcalled.n")"
+		out_w="$(grep -c -F "$said" "$work/extcalled.w")"
+		bad="$(cat "$work"/extcalled.n "$work"/extcalled.w | grep -c -E "wow64|current_exe|/proc/self|panicked")"
+		out_e=""
+		run="${chimera_root:+$chimera_root/build/meson-linux/chimera-run}"
+		pkg="${chimera_root:+$chimera_root/build/Cores/opengmk.chimeraCore}"
+		if [ -n "$run" ] && [ -x "$run" ] && [ -f "$pkg" ]; then
+			python3 -c 'import json,sys; n=len(json.load(open(sys.argv[1]))["input"]["buttons"]); print("\n".join("|%5d,%5d,%s|" % (4096, 4096, "." * n) for _ in range(60)))' \
+				"$here/waterbox.config" > "$work/extcalled.movie"
+			rm -rf "$work/extcalled.chimeraProject"
+			"$run" --new-project "$work/extcalled.chimeraProject" "$pkg" "$cgame" "$work/extcalled.movie" > "$work/extcalled.make.log" 2>&1
+			box "$run" --project "$work/extcalled.chimeraProject" "$pkg" --files "$build/content" > "$work/extcalled.out" 2>&1
+			out_e="$(grep -c -F "It said: $said" "$work/extcalled.out")"
+			bad=$((bad + $(grep -c -E "wow64|current_exe|/proc/self|panicked" "$work/extcalled.out")))
+		fi
+		ok=0
+		[ "$out_n" -ge 1 ] && [ "$out_w" -ge 1 ] && [ "$bad" = 0 ] && { [ -z "$out_e" ] || [ "$out_e" = 1 ]; } && ok=1
+		verdict extcalled "$ok" "a call into a library the core cannot run, inside an extension, stops the game with a sentence naming it" \
+			"native $out_n, sandbox $out_w; panic text $bad${out_e:+; chimera-run $out_e}"
+		;;
+	extstandin)
+		# An extension whose library is one of OpenGMK's silent stand-ins
+		# (gmfmodsimple.dll) is run on the stand-in: the game calls it, the answer
+		# (1) shows in the picture, and the native reference, the sandbox and a
+		# savestate before every step agree. When the test is being broken the
+		# game does not call it.
+		sgame="$build/content/extstandin.exe"
+		if [ "$breaking" = 1 ]; then "$mkgame" "$sgame" ext:gmfmodsimple.dll:FMODSoundAdd > /dev/null; else "$mkgame" "$sgame" extcall:gmfmodsimple.dll:FMODSoundAdd > /dev/null; fi
+		"$native" "$sgame" --frames 100 --digest-every 20 > "$work/extstandin.n" 2> "$work/extstandin.n.err"
+		box "$wbx" "$core" "$sgame" --frames 100 --digest-every 20 > "$work/extstandin.w" 2> "$work/extstandin.w.err"
+		box "$wbx" "$core" "$sgame" --frames 100 --digest-every 20 --rerecord > "$work/extstandin.r" 2> /dev/null
+		run_native --frames 100 --digest-every 20 > "$work/extstandin.plain"
+		a="$(digest "$work/extstandin.n" | tail -1 | awk '{print $3,$4}')"
+		b="$(digest "$work/extstandin.plain" | tail -1 | awk '{print $3,$4}')"
+		n="$(digest "$work/extstandin.n" | wc -l)"
+		said="$(cat "$work"/extstandin.*.err | grep -c -E "Windows library|panicked")"
+		ok=0
+		[ "$n" = 6 ] && [ -n "$a" ] && [ "$a" != "$b" ] && [ "$said" = 0 ] && diff <(digest "$work/extstandin.n") <(digest "$work/extstandin.w") > /dev/null &&
+			diff <(digest "$work/extstandin.n") <(digest "$work/extstandin.r") > /dev/null && ok=1
+		verdict extstandin "$ok" "an extension whose library has a stand-in runs on it, the same in both and through savestates" \
+			"$n digests; the picture shows the answer; sentences or panics: $said"
 		;;
 	# ------------------------------------------------ the package, through the engine
 	engine)

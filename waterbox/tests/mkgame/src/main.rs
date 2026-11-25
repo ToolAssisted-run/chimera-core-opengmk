@@ -206,6 +206,71 @@ fn library_call(lib: &str, func: &str, when: &str) -> String {
     format!("{when}{{ lib_id = external_define(\"{lib}\", \"{func}\", 0, 0, 1, 0); score += 1000 * external_call(lib_id, 1); }}\n")
 }
 
+/// A length-prefixed string, as the data file holds one.
+fn put_str(out: &mut Vec<u8>, s: &str) {
+    out.write_u32::<LE>(s.len() as u32).unwrap();
+    out.extend_from_slice(s.as_bytes());
+}
+
+/// The extensions list of the data file: one extension holding one Windows
+/// library (`lib`, its contents are not a real library, nothing here ever loads
+/// it) that declares one function, `func`, which GML calls `ext_<func>` (cdecl,
+/// one number in, a number out). The inverse of gm8exe's `Extension::read`.
+fn extensions(lib: &str, func: &str) -> Vec<u8> {
+    let mut e = Vec::new();
+    e.write_u32::<LE>(700).unwrap(); // the extension
+    put_str(&mut e, "ext_test");
+    put_str(&mut e, "ext_test");
+    e.write_u32::<LE>(1).unwrap(); // files
+    e.write_u32::<LE>(700).unwrap(); // the library
+    put_str(&mut e, lib);
+    e.write_u32::<LE>(1).unwrap(); // kind: a dynamic library
+    put_str(&mut e, ""); // no initializer
+    put_str(&mut e, ""); // no finalizer
+    e.write_u32::<LE>(1).unwrap(); // functions
+    e.write_u32::<LE>(700).unwrap();
+    put_str(&mut e, &format!("ext_{func}"));
+    put_str(&mut e, func);
+    e.write_u32::<LE>(12).unwrap(); // cdecl
+    e.write_u32::<LE>(0).unwrap(); // id
+    e.write_i32::<LE>(1).unwrap(); // one argument
+    for _ in 0..17 {
+        e.write_u32::<LE>(2).unwrap(); // a number
+    }
+    e.write_u32::<LE>(2).unwrap(); // returns a number
+    e.write_u32::<LE>(0).unwrap(); // no constants
+    // the contents: the file deflated behind its length, scrambled with the table
+    // of seed 0 (the reader's: all but the first byte go through the table)
+    let (seed1, seed2) = (0u32, 6u32);
+    let mut table = [0u8; 0x200];
+    for (i, v) in table.iter_mut().enumerate() {
+        *v = (i % 256) as u8;
+    }
+    for i in 1..0x2711u32 {
+        let idx = (((i * seed2 + seed1) % 0xFE) + 1) as usize;
+        table.swap(idx, idx + 1);
+    }
+    let mut encrypt = [0u8; 256]; // plain byte -> scrambled byte
+    for i in 0..0x100usize {
+        encrypt[(i as u8).wrapping_add(1) as usize] = table[i + 1];
+    }
+    let z = zlib(b"not a Windows library: the core never loads this");
+    let mut data = Vec::new();
+    data.write_u32::<LE>(z.len() as u32).unwrap();
+    data.extend_from_slice(&z);
+    for b in data.iter_mut().skip(1) {
+        *b = encrypt[*b as usize];
+    }
+    e.write_u32::<LE>(data.len() as u32 + 4).unwrap();
+    e.write_u32::<LE>(0).unwrap(); // seed 0
+    e.extend_from_slice(&data);
+    let mut d = Vec::new();
+    d.write_u32::<LE>(700).unwrap();
+    d.write_u32::<LE>(1).unwrap();
+    d.extend_from_slice(&e);
+    d
+}
+
 fn data_block(calls: &Option<String>) -> Vec<u8> {
     let mut d = Vec::new();
     d.write_u32::<LE>(0).unwrap(); // no garbage words
@@ -214,8 +279,14 @@ fn data_block(calls: &Option<String>) -> Vec<u8> {
     for g in [1u32, 2, 3, 4] {
         d.write_u32::<LE>(g).unwrap();
     }
-    d.write_u32::<LE>(700).unwrap(); // extensions
-    d.write_u32::<LE>(0).unwrap();
+    let call = calls.as_deref().map(|c| c.splitn(3, ':').collect::<Vec<_>>());
+    match call.as_deref() {
+        Some(["ext" | "extcall", lib, func]) => d.extend_from_slice(&extensions(lib, func)),
+        _ => {
+            d.write_u32::<LE>(700).unwrap(); // extensions: none
+            d.write_u32::<LE>(0).unwrap();
+        }
+    }
     list(&mut d, 800, &[]); // triggers
     d.write_u32::<LE>(800).unwrap(); // constants
     d.write_u32::<LE>(0).unwrap();
@@ -239,7 +310,8 @@ fn data_block(calls: &Option<String>) -> Vec<u8> {
     list(&mut d, 800, &[]); // timelines
     let mut events: Vec<Vec<(u32, Vec<CodeAction>)>> = (0..12).map(|_| Vec::new()).collect();
     let (mut create, mut step) = (CREATE.to_string(), STEP.to_string());
-    match calls.as_deref().map(|c| c.splitn(3, ':').collect::<Vec<_>>()).as_deref() {
+    match call.as_deref() {
+        Some(["extcall", _, func]) => step += &format!("if (ang == 40) score += 1000 * ext_{func}(1);\n"),
         Some(["dll", lib, func]) => step += &library_call(lib, func, "if (ang == 40) "),
         Some(["dllc", lib, func]) => create += &library_call(lib, func, ""),
         Some([name]) => step += &format!("if (ang == 40) {name}(\"hello\");\n"),
@@ -367,6 +439,9 @@ fn main() {
     // define that function of a Windows library and call it at its tenth step
     // (its answer is added to the score, so the picture shows it); "dllc:..."
     // does the same in the first event, before the game has started.
+    // "ext:LIBRARY:FUNCTION" makes the game carry a GameMaker extension that holds
+    // that library and function and never calls it; "extcall:..." calls it at the
+    // tenth step too (the answer is added to the score as for "dll").
     let calls = args.next();
     let mut exe = vec![0u8; 3_800_004];
     // MZ, and a PE header with one section

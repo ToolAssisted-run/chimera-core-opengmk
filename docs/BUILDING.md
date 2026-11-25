@@ -68,6 +68,9 @@ keyboard, the mouse, the date, `random()` and files). Nothing else is needed.
 | a function OpenGMK lacks | a game that calls `show_message` stops with "This game called show_message, which OpenGMK does not implement yet.", in both and through chimera-run |
 | a sound DLL's stand-in | a game that calls `gmfmodsimple.dll` runs, the same in both and through a savestate before every step, and its answer shows in the picture |
 | a DLL that cannot run | a game that calls `mystery.dll` stops (at its tenth step) or does not start (in its first event), with a sentence naming the DLL and the function, in both and through chimera-run, and no panic text |
+| an extension's library, never called | a game that carries a GameMaker extension with `mystery.dll` and never calls it starts and runs: the same digests as the game without it, in both |
+| an extension's library, called | the same game calling the function at its tenth step stops with the sentence naming `mystery.dll` and the function, in both and through chimera-run, and no panic text |
+| an extension's sound DLL | an extension holding `gmfmodsimple.dll`, called, runs on the stand-in, the same in both and through a savestate before every step, and its answer shows in the picture |
 | the engine | the package, through chimera-run, plays the route; its picture is `run-wbx`'s |
 
 Then the frontend test, which needs the package in the Chimera checkout, the

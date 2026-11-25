@@ -1,0 +1,72 @@
+--- a/gm8emulator/src/game.rs
++++ b/gm8emulator/src/game.rs
+@@ -269,6 +269,9 @@
+ pub enum ExtensionFunction {
+     Dll(String, ID),
+     Gml(Rc<[Instruction]>),
++    /// Chimera: a function of a library the core cannot run (see `external::NO_LIBRARY`). It holds the
++    /// text that says which library and function, and calling it stops the game with that text.
++    NoLibrary(String),
+ }
+ 
+ /// A room state originally loaded from a room asset.
+@@ -719,6 +722,15 @@
+                                 },
+                             }) {
+                                 Ok(id) => extension_functions.push(Some(ExtensionFunction::Dll(sym.into(), id))),
++                                Err(e) if e.starts_with(external::NO_LIBRARY) => {
++                                    // Chimera: skipped at start, as upstream does for a library that fails to
++                                    // load, but a call to it says so instead of answering 0.
++                                    println!(
++                                        "WARNING: extension function {} (from {}) needs a Windows library the core cannot run",
++                                        function.name, dll_name
++                                    );
++                                    extension_functions.push(Some(ExtensionFunction::NoLibrary(e)));
++                                },
+                                 Err(e) => {
+                                     println!(
+                                         "WARNING: failed to load extension function {} (from {}): {}",
+@@ -2149,10 +2161,19 @@
+                 self.execute(&instructions, &mut context)?;
+                 Ok(context.return_value)
+             },
++            // Chimera: the game called a function of a library the core cannot run
++            Some(ExtensionFunction::NoLibrary(why)) => Err(gml::Error::ExternalFunction(String::new(), why.clone())),
+             None => Ok(Default::default()), // unfortunately required
+         }
+     }
+ 
++    /// Chimera: whether an extension function is one of a library the core cannot run. The
++    /// extension's initializer and finalizer are called by the engine, not by the game, so
++    /// those are passed over (a game that never calls the library still runs).
++    pub fn extension_has_no_library(&self, id: usize) -> bool {
++        matches!(self.extension_functions[id], Some(ExtensionFunction::NoLibrary(_)))
++    }
++
+     /// Starts the game, loading the first room. Does not need to be called immediately before loading a savestate.
+     pub fn init(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+         // Library initialization code
+@@ -2168,6 +2189,9 @@
+ 
+         // Extension initializers
+         for i in 0..self.extension_initializers.len() {
++            if self.extension_has_no_library(self.extension_initializers[i]) {
++                continue
++            }
+             let dummy_instance = self
+                 .room
+                 .instance_list
+diff --git a/gm8emulator/src/game/events.rs b/gm8emulator/src/game/events.rs
+index 03f18ecd..4d1176e4 100644
+--- a/gm8emulator/src/game/events.rs
++++ b/gm8emulator/src/game/events.rs
+@@ -96,6 +96,9 @@ impl Game {
+ 
+         // Extension finalizers
+         for i in 0..self.extension_finalizers.len() {
++            if self.extension_has_no_library(self.extension_finalizers[i]) {
++                continue
++            }
+             let dummy_instance = self
+                 .room
+                 .instance_list
