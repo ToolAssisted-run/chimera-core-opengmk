@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 is not a random seed this core takes.",
 		"error.launch": "The game could not start: %1",
 		"error.no_file": "No game is in the project.",
+		"error.no_library": "This game calls a Windows library (%1, function %2), which this core cannot run.",
 		"error.not_read": "%1 could not be read: %2",
 		"error.save_entry": "The save data's %1 could not be read: %2",
 		"error.save_not_zip": "The save data is not a zip: %1",

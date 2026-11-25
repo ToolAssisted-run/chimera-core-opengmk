@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 är inte ett slumpfrö som den här kärnan tar emot.",
 		"error.launch": "Spelet kunde inte starta: %1",
 		"error.no_file": "Det finns inget spel i projektet.",
+		"error.no_library": "Det här spelet anropar ett Windows-bibliotek (%1, funktion %2), som den här kärnan inte kan köra.",
 		"error.not_read": "%1 kunde inte läsas: %2",
 		"error.save_entry": "%1 i de sparade data kunde inte läsas: %2",
 		"error.save_not_zip": "Sparade data är inte en zip: %1",

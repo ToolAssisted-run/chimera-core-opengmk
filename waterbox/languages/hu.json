@@ -5,6 +5,7 @@
 		"error.bad_seed": "A(z) %1 nem olyan véletlen mag, amelyet ez a mag elfogad.",
 		"error.launch": "A játék nem indulhatott el: %1",
 		"error.no_file": "Nincs játék a projektben.",
+		"error.no_library": "Ez a játék egy Windows-könyvtárat hív meg (%1, függvény: %2), amelyet ez a mag nem tud futtatni.",
 		"error.not_read": "A(z) %1 nem olvasható: %2",
 		"error.save_entry": "A mentett adatok %1 eleme nem olvasható: %2",
 		"error.save_not_zip": "A mentett adatok nem zip: %1",

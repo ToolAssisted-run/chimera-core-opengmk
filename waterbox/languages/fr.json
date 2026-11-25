@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 n'est pas une graine aléatoire que ce noyau accepte.",
 		"error.launch": "Le jeu n'a pas pu démarrer : %1",
 		"error.no_file": "Le projet ne contient aucun jeu.",
+		"error.no_library": "Ce jeu appelle une bibliothèque Windows (%1, fonction %2), que ce cœur ne peut pas exécuter.",
 		"error.not_read": "%1 n'a pas pu être lu : %2",
 		"error.save_entry": "%1 des données de sauvegarde n'a pas pu être lu : %2",
 		"error.save_not_zip": "Les données de sauvegarde ne sont pas un zip : %1",

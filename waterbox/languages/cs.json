@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 není náhodné semeno, které toto jádro přijímá.",
 		"error.launch": "Hru se nepodařilo spustit: %1",
 		"error.no_file": "V projektu není žádná hra.",
+		"error.no_library": "Tato hra volá knihovnu Windows (%1, funkce %2), kterou toto jádro nedokáže spustit.",
 		"error.not_read": "Soubor %1 nešlo přečíst: %2",
 		"error.save_entry": "Soubor %1 z uložených dat nešlo přečíst: %2",
 		"error.save_not_zip": "Uložená data nejsou zip: %1",

@@ -66,6 +66,8 @@ keyboard, the mouse, the date, `random()` and files). Nothing else is needed.
 | save data | the files written are exported, and a game started from them carries on |
 | a file that is not a game | it is refused, with its reason, in both |
 | a function OpenGMK lacks | a game that calls `show_message` stops with "This game called show_message, which OpenGMK does not implement yet.", in both and through chimera-run |
+| a sound DLL's stand-in | a game that calls `gmfmodsimple.dll` runs, the same in both and through a savestate before every step, and its answer shows in the picture |
+| a DLL that cannot run | a game that calls `mystery.dll` stops (at its tenth step) or does not start (in its first event), with a sentence naming the DLL and the function, in both and through chimera-run, and no panic text |
 | the engine | the package, through chimera-run, plays the route; its picture is `run-wbx`'s |
 
 Then the frontend test, which needs the package in the Chimera checkout, the

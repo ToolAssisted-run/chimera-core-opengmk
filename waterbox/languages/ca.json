@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 no és una llavor aleatòria que aquest nucli accepti.",
 		"error.launch": "El joc no s'ha pogut iniciar: %1",
 		"error.no_file": "Cap joc és al projecte.",
+		"error.no_library": "Aquest joc crida una biblioteca de Windows (%1, funció %2), que aquest nucli no pot executar.",
 		"error.not_read": "No s'ha pogut llegir %1: %2",
 		"error.save_entry": "No s'ha pogut llegir %1 de les dades desades: %2",
 		"error.save_not_zip": "Les dades desades no són un zip: %1",

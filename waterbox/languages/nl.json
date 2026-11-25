@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 is geen willekeurige seed die deze kern accepteert.",
 		"error.launch": "Het spel kon niet starten: %1",
 		"error.no_file": "Er zit geen spel in het project.",
+		"error.no_library": "Deze game roept een Windows-bibliotheek aan (%1, functie %2), die deze kern niet kan uitvoeren.",
 		"error.not_read": "%1 kon niet worden gelezen: %2",
 		"error.save_entry": "%1 uit de opslagdata kon niet worden gelezen: %2",
 		"error.save_not_zip": "De opslagdata zijn geen zip: %1",

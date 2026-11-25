@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1은(는) 이 코어가 받는 난수 시드가 아닙니다.",
 		"error.launch": "게임을 시작할 수 없습니다: %1",
 		"error.no_file": "프로젝트에 게임이 없습니다.",
+		"error.no_library": "이 게임은 Windows 라이브러리(%1, 함수 %2)를 호출하는데, 이 코어는 이를 실행할 수 없습니다.",
 		"error.not_read": "%1을(를) 읽을 수 없습니다: %2",
 		"error.save_entry": "저장 데이터의 %1을(를) 읽을 수 없습니다: %2",
 		"error.save_not_zip": "저장 데이터가 zip이 아닙니다: %1",

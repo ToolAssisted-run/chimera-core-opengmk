@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 nie jest ziarnem losowym, które ten rdzeń przyjmuje.",
 		"error.launch": "Nie udało się uruchomić gry: %1",
 		"error.no_file": "W projekcie nie ma gry.",
+		"error.no_library": "Ta gra wywołuje bibliotekę Windows (%1, funkcja %2), której ten rdzeń nie potrafi uruchomić.",
 		"error.not_read": "Nie udało się odczytać %1: %2",
 		"error.save_entry": "Nie udało się odczytać %1 z danych zapisu: %2",
 		"error.save_not_zip": "Dane zapisu nie są plikiem zip: %1",

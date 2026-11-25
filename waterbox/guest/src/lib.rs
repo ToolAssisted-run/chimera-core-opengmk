@@ -176,11 +176,17 @@ fn say(key: &str, args: &[&str]) -> String {
 /// The English of a text of languages/en.json, its %1 filled in. The sandbox's
 /// last words for a stop are one plain line of English: the window shows what
 /// the machine said as it is, and does not look it up in the package's tables.
-fn english(key: &str, arg: &str) -> String {
+fn english(key: &str, args: &[&str]) -> String {
     let table: Value = serde_json::from_str(include_str!("../../languages/en.json")).unwrap_or(Value::Null);
     match table["texts"][key].as_str() {
-        Some(text) => text.replace("%1", arg),
-        None => format!("{key} {arg}"),
+        Some(text) => {
+            let mut text = text.to_string();
+            for (i, arg) in args.iter().enumerate() {
+                text = text.replace(&format!("%{}", i + 1), arg);
+            }
+            text
+        }
+        None => format!("{key} {}", args.join(" ")),
     }
 }
 
@@ -194,14 +200,36 @@ fn say_unimplemented_functions() {
     let previous = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let text = info.to_string();
-        if let Some(at) = text.find(MARK) {
+        if let Some((library, function)) = missing_library(&text) {
+            eprintln!("{}", english("error.no_library", &[&library, &function]));
+        } else if let Some(at) = text.find(MARK) {
             let name: String =
                 text[at + MARK.len()..].chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_').collect();
-            eprintln!("{}", english("error.unimplemented", &name));
+            eprintln!("{}", english("error.unimplemented", &[&name]));
         } else {
             previous(info);
         }
     }));
+}
+
+/// What OpenGMK (patch 0008) says when a game asks for a Windows library the core
+/// cannot run: this marker, then the library and the function, each after a
+/// 0x1F byte. None for any other text.
+const NO_LIBRARY: &str = "chimera-no-library";
+
+fn missing_library(text: &str) -> Option<(String, String)> {
+    let at = text.find(NO_LIBRARY)? + NO_LIBRARY.len();
+    let mut parts = text[at..].split('\u{1f}').skip(1);
+    Some((parts.next()?.to_string(), parts.next()?.to_string()))
+}
+
+/// Why a game could not start, as a text of the tables.
+fn launch_error(e: &dyn std::fmt::Display) -> String {
+    let text = e.to_string();
+    match missing_library(&text) {
+        Some((library, function)) => say("error.no_library", &[&library, &function]),
+        None => say("error.launch", &[&text]),
+    }
 }
 
 fn fail(why: String) -> i32 {
@@ -296,9 +324,9 @@ pub fn start(exe: Vec<u8>, name: &str, settings: &Settings) -> Result<(), String
         false,
         PlayType::Normal,
     )
-    .map_err(|e| say("error.launch", &[&e.to_string()]))?;
+    .map_err(|e| launch_error(&e))?;
     game.clock = GameClock::SpoofedNanos(settings.clock_start as u128 * 1_000_000_000);
-    game.chimera_start().map_err(|e| say("error.launch", &[&e.to_string()]))?;
+    game.chimera_start().map_err(|e| launch_error(&e))?;
     let c = core();
     c.speed = game.room.speed.max(1);
     game_to_state(&game, 0);
@@ -438,6 +466,12 @@ pub extern "C" fn FrameAdvance(_buttons: u64) {
         }
         Err(e) => {
             c.running = false;
+            let text = e.to_string();
+            if missing_library(&text).is_some() {
+                // a game that asks for a library the core cannot run stops the machine with a
+                // sentence naming it, as a function OpenGMK lacks does (the hook says it)
+                panic!("{text}");
+            }
             eprintln!("opengmk core: the game stopped: {e}");
         }
     }

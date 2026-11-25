@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 不是此核心接受的隨機種子。",
 		"error.launch": "遊戲無法啟動：%1",
 		"error.no_file": "專案中沒有遊戲。",
+		"error.no_library": "此遊戲呼叫了 Windows 程式庫（%1，函式 %2），此核心無法執行它。",
 		"error.not_read": "無法讀取 %1：%2",
 		"error.save_entry": "無法讀取存檔資料中的 %1：%2",
 		"error.save_not_zip": "存檔資料不是 zip：%1",

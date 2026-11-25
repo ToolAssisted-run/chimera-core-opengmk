@@ -1,0 +1,47 @@
+diff --git a/gm8emulator/src/game.rs b/gm8emulator/src/game.rs
+index 7932ea1..e646500 100644
+--- a/gm8emulator/src/game.rs
++++ b/gm8emulator/src/game.rs
+@@ -665,7 +665,9 @@ impl Game {
+ 
+         let default_font = asset::font::load_default_font(&mut atlases)?;
+ 
+-        let mut externals = external::ExternalManager::new(play_type == PlayType::Record);
++        // Chimera: OpenGMK's silent stand-ins for the sound libraries it knows are always on.
++        // They answer fixed values, so they change nothing a savestate holds.
++        let mut externals = external::ExternalManager::new(true);
+ 
+         // Code compiling starts here. The order in which things are compiled is important for
+         // keeping savestates compatible. This isn't 100% accurate right now, but it's mostly right.
+diff --git a/gm8emulator/src/game/external.rs b/gm8emulator/src/game/external.rs
+index cd50a1a9..35369490 100644
+--- a/gm8emulator/src/game/external.rs
++++ b/gm8emulator/src/game/external.rs
+@@ -19,6 +19,9 @@ use wow64 as ipc;
+ 
+ pub use native::NativeExternal;
+ 
++/// What `ExternalManager::define` says when a game asks for a library the core cannot run.
++pub const NO_LIBRARY: &str = "chimera-no-library";
++
+ pub enum Call {
+     Dummy(gml::Value),
+     Emulated(Function),
+@@ -58,11 +61,12 @@ impl ExternalManager {
+         if let Some(dummy) = self.should_dummy(&signature) {
+             return Ok(Call::Dummy(dummy))
+         }
+-        if cfg!(all(target_os = "windows", target_arch = "x86")) {
+-            Ok(Call::Native(self.native_manager.define(&signature)?))
+-        } else {
+-            Ok(Call::Ipc(self.ipc_manager.define(&signature)?))
+-        }
++        // Chimera: a library with no stand-in is not run. The sandbox has no Windows and cannot
++        // start the helper process upstream uses (it cannot even name its own program). The
++        // core reads this text back to tell the person which library it was: the marker, the
++        // library and the function, each followed by a 0x1F byte.
++        let library = Path::new(&signature.dll).file_name().and_then(|oss| oss.to_str()).unwrap_or(&signature.dll);
++        Err(format!("{}\u{1f}{}\u{1f}{}\u{1f}", NO_LIBRARY, library, signature.symbol))
+     }
+ 
+     pub fn define(&mut self, signature: dll::ExternalSignature) -> Result<ID, String> {

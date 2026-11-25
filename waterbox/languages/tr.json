@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1, bu çekirdeğin kabul ettiği bir rastgele tohum değil.",
 		"error.launch": "Oyun başlatılamadı: %1",
 		"error.no_file": "Projede oyun yok.",
+		"error.no_library": "Bu oyun bir Windows kitaplığını (%1, işlev %2) çağırıyor; bu çekirdek onu çalıştıramaz.",
 		"error.not_read": "%1 okunamadı: %2",
 		"error.save_entry": "Kayıt verisinin %1 öğesi okunamadı: %2",
 		"error.save_not_zip": "Kayıt verisi bir zip değil: %1",

@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 no es una semilla aleatoria que este núcleo acepte.",
 		"error.launch": "El juego no pudo iniciarse: %1",
 		"error.no_file": "No hay ningún juego en el proyecto.",
+		"error.no_library": "Este juego llama a una biblioteca de Windows (%1, función %2), que este núcleo no puede ejecutar.",
 		"error.not_read": "No se pudo leer %1: %2",
 		"error.save_entry": "No se pudo leer %1 de los datos guardados: %2",
 		"error.save_not_zip": "Los datos guardados no son un zip: %1",

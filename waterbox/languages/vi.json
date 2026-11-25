@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 không phải hạt giống ngẫu nhiên mà lõi này chấp nhận.",
 		"error.launch": "Không khởi động được trò chơi: %1",
 		"error.no_file": "Dự án không có trò chơi nào.",
+		"error.no_library": "Trò chơi này gọi một thư viện Windows (%1, hàm %2) mà lõi này không thể chạy.",
 		"error.not_read": "Không đọc được %1: %2",
 		"error.save_entry": "Không đọc được %1 trong dữ liệu lưu: %2",
 		"error.save_not_zip": "Dữ liệu lưu không phải zip: %1",

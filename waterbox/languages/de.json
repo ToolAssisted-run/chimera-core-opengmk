@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 ist kein Zufallswert, den dieser Kern annimmt.",
 		"error.launch": "Das Spiel konnte nicht starten: %1",
 		"error.no_file": "Das Projekt enthält kein Spiel.",
+		"error.no_library": "Dieses Spiel ruft eine Windows-Bibliothek auf (%1, Funktion %2), die dieser Kern nicht ausführen kann.",
 		"error.not_read": "%1 konnte nicht gelesen werden: %2",
 		"error.save_entry": "%1 aus den Speicherdaten konnte nicht gelesen werden: %2",
 		"error.save_not_zip": "Die Speicherdaten sind kein Zip: %1",

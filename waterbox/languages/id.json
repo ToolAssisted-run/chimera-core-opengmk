@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 bukan benih acak yang diterima inti ini.",
 		"error.launch": "Game tidak dapat dimulai: %1",
 		"error.no_file": "Tidak ada game di dalam proyek.",
+		"error.no_library": "Game ini memanggil pustaka Windows (%1, fungsi %2), yang tidak dapat dijalankan oleh inti ini.",
 		"error.not_read": "%1 tidak dapat dibaca: %2",
 		"error.save_entry": "%1 dari data simpanan tidak dapat dibaca: %2",
 		"error.save_not_zip": "Data simpanan bukan zip: %1",

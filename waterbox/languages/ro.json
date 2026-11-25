@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 nu este o sămânță aleatorie pe care acest nucleu o acceptă.",
 		"error.launch": "Jocul nu a putut porni: %1",
 		"error.no_file": "Nu există niciun joc în proiect.",
+		"error.no_library": "Acest joc apelează o bibliotecă Windows (%1, funcția %2), pe care acest nucleu nu o poate rula.",
 		"error.not_read": "%1 nu a putut fi citit: %2",
 		"error.save_entry": "%1 din datele salvate nu a putut fi citit: %2",
 		"error.save_not_zip": "Datele salvate nu sunt un zip: %1",

@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 ei ole satunnaislukujen siemen, jonka tämä ydin hyväksyy.",
 		"error.launch": "Peliä ei voitu käynnistää: %1",
 		"error.no_file": "Projektissa ei ole peliä.",
+		"error.no_library": "Tämä peli kutsuu Windows-kirjastoa (%1, funktio %2), jota tämä ydin ei voi ajaa.",
 		"error.not_read": "Tiedostoa %1 ei voitu lukea: %2",
 		"error.save_entry": "Tallennustietojen %1 ei voitu lukea: %2",
 		"error.save_not_zip": "Tallennustiedot eivät ole zip: %1",

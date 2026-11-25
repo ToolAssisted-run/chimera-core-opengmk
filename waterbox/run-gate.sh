@@ -125,7 +125,7 @@ run_wbx() { box "$wbx" "$core" "$game" "$@" 2> /dev/null; }
 run_native --frames 300 --digest-every 30 "${route[@]}" > "$work/n.out"
 run_wbx --frames 300 --digest-every 30 "${route[@]}" > "$work/w.out"
 
-tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented engine)
+tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented standin nolibrary engine)
 for t in "${tests[@]}"; do
 	if [ "$breaking" = 1 ]; then BREAK="$t"; else BREAK=""; fi
 	case "$t" in
@@ -256,6 +256,71 @@ for t in "${tests[@]}"; do
 		[ "$out_n" -ge 1 ] && [ "$out_w" -ge 1 ] && { [ -z "$out_e" ] || [ "$out_e" = "1/1" ]; } && ok=1
 		verdict unimplemented "$ok" "a game that calls show_message, which OpenGMK lacks, gets a sentence naming it" \
 			"native $out_n, sandbox $out_w${out_e:+, chimera-run $out_e}"
+		;;
+	# ------------------------------------------------ a Windows library the game asks for
+	standin)
+		# A game that defines and calls gmfmodsimple.dll, one of the sound libraries
+		# OpenGMK answers itself, silently: it runs, the same in both and through a
+		# savestate before every step, and the answer (1) is in its picture (the
+		# score is 1000 higher), so the call was made. When the test is being
+		# broken the game that calls nothing is run instead.
+		sgame="$build/content/standin.exe"
+		if [ "$breaking" = 1 ]; then "$mkgame" "$sgame" > /dev/null; else "$mkgame" "$sgame" dll:gmfmodsimple.dll:FMODSoundAdd > /dev/null; fi
+		"$native" "$sgame" --frames 100 --digest-every 20 > "$work/standin.n" 2> "$work/standin.n.err"
+		box "$wbx" "$core" "$sgame" --frames 100 --digest-every 20 > "$work/standin.w" 2> "$work/standin.w.err"
+		box "$wbx" "$core" "$sgame" --frames 100 --digest-every 20 --rerecord > "$work/standin.r" 2> /dev/null
+		run_native --frames 100 --digest-every 20 > "$work/standin.plain"
+		a="$(digest "$work/standin.n" | tail -1 | awk '{print $3,$4}')"
+		b="$(digest "$work/standin.plain" | tail -1 | awk '{print $3,$4}')"
+		n="$(digest "$work/standin.n" | wc -l)"
+		ok=0
+		[ "$n" = 6 ] && [ -n "$a" ] && [ "$a" != "$b" ] && diff <(digest "$work/standin.n") <(digest "$work/standin.w") > /dev/null &&
+			diff <(digest "$work/standin.n") <(digest "$work/standin.r") > /dev/null && ok=1
+		verdict standin "$ok" "a game that calls gmfmodsimple.dll runs on OpenGMK's silent stand-in, the same in both and through savestates" \
+			"$n digests; the picture shows the answer"
+		;;
+	nolibrary)
+		# A game that calls a library nobody can run says so in a sentence naming
+		# the library and the function, never with a Rust panic or a missing
+		# helper program: asked for at its tenth step (the machine stops with the
+		# sentence), and asked for in its first event (the game does not start).
+		said="This game calls a Windows library (mystery.dll, function Foo), which this core cannot run."
+		lgame="$build/content/nolibrary.exe"
+		cgame="$build/content/nolibrary-start.exe"
+		if [ "$breaking" = 1 ]; then
+			"$mkgame" "$lgame" > /dev/null; "$mkgame" "$cgame" > /dev/null
+		else
+			"$mkgame" "$lgame" dll:mystery.dll:Foo > /dev/null; "$mkgame" "$cgame" dllc:mystery.dll:Foo > /dev/null
+		fi
+		"$native" "$lgame" --frames 30 > /dev/null 2> "$work/nolibrary.n"
+		box "$wbx" "$core" "$lgame" --frames 30 > /dev/null 2> "$work/nolibrary.w"
+		"$native" "$cgame" --frames 30 > /dev/null 2> "$work/nolibrary-start.n"
+		box "$wbx" "$core" "$cgame" --frames 30 > /dev/null 2> "$work/nolibrary-start.w"
+		out_n="$(grep -c -F "$said" "$work/nolibrary.n")"
+		out_w="$(grep -c -F "$said" "$work/nolibrary.w")"
+		start_n="$(grep -c -F "error.no_library" "$work/nolibrary-start.n")"
+		start_w="$(grep -c -F "error.no_library" "$work/nolibrary-start.w")"
+		# no panic text, no helper program, in any of the four
+		bad="$(cat "$work"/nolibrary*.n "$work"/nolibrary*.w | grep -c -E "wow64|current_exe|/proc/self")"
+		out_e=""
+		run="${chimera_root:+$chimera_root/build/meson-linux/chimera-run}"
+		pkg="${chimera_root:+$chimera_root/build/Cores/opengmk.chimeraCore}"
+		if [ -n "$run" ] && [ -x "$run" ] && [ -f "$pkg" ]; then
+			python3 -c 'import json,sys; n=len(json.load(open(sys.argv[1]))["input"]["buttons"]); print("\n".join("|%5d,%5d,%s|" % (4096, 4096, "." * n) for _ in range(30)))' \
+				"$here/waterbox.config" > "$work/nolibrary.movie"
+			rm -rf "$work/nolibrary.chimeraProject" "$work/nolibrary-start.chimeraProject"
+			"$run" --new-project "$work/nolibrary.chimeraProject" "$pkg" "$lgame" "$work/nolibrary.movie" > "$work/nolibrary.make.log" 2>&1
+			box "$run" --project "$work/nolibrary.chimeraProject" "$pkg" --files "$build/content" > "$work/nolibrary.out" 2>&1
+			"$run" --new-project "$work/nolibrary-start.chimeraProject" "$pkg" "$cgame" "$work/nolibrary.movie" > "$work/nolibrary-start.make.log" 2>&1
+			box "$run" --project "$work/nolibrary-start.chimeraProject" "$pkg" --files "$build/content" > "$work/nolibrary-start.out" 2>&1
+			out_e="$(grep -c -F "It said: $said" "$work/nolibrary.out")/$(grep -c -F "$said" "$work/nolibrary-start.out")"
+			bad=$((bad + $(cat "$work/nolibrary.out" "$work/nolibrary-start.out" | grep -c -E "wow64|current_exe|/proc/self|panicked")))
+		fi
+		ok=0
+		[ "$out_n" -ge 1 ] && [ "$out_w" -ge 1 ] && [ "$start_n" -ge 1 ] && [ "$start_w" -ge 1 ] && [ "$bad" = 0 ] &&
+			{ [ -z "$out_e" ] || [ "$out_e" = "1/1" ]; } && ok=1
+		verdict nolibrary "$ok" "a game that calls a library the core cannot run gets a sentence naming it, not a panic" \
+			"step: native $out_n, sandbox $out_w; start: native $start_n, sandbox $start_w; panic text $bad${out_e:+; chimera-run $out_e}"
 		;;
 	# ------------------------------------------------ the package, through the engine
 	engine)

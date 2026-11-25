@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 er ikke et tilfeldig frø denne kjernen tar imot.",
 		"error.launch": "Spillet kunne ikke starte: %1",
 		"error.no_file": "Det er ikke noe spill i prosjektet.",
+		"error.no_library": "Dette spillet kaller et Windows-bibliotek (%1, funksjon %2), som denne kjernen ikke kan kjøre.",
 		"error.not_read": "%1 kunne ikke leses: %2",
 		"error.save_entry": "%1 i lagringsdataene kunne ikke leses: %2",
 		"error.save_not_zip": "Lagringsdataene er ikke en zip: %1",

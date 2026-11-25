@@ -5,6 +5,7 @@
 		"error.bad_seed": "%1 不是此内核接受的随机种子。",
 		"error.launch": "游戏无法启动：%1",
 		"error.no_file": "项目中没有游戏。",
+		"error.no_library": "此游戏调用了 Windows 库（%1，函数 %2），此内核无法运行它。",
 		"error.not_read": "无法读取 %1：%2",
 		"error.save_entry": "无法读取存档数据中的 %1：%2",
 		"error.save_not_zip": "存档数据不是 zip：%1",

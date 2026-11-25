@@ -43,9 +43,10 @@ package's declarations, and runs on a game made here).
 - **Does it recompile?** No. GML is compiled by OpenGMK to its own
   instructions and interpreted.
 - **What must the user bring?** The game: a GameMaker 8.0 or 8.1 `.exe`. A
-  game that calls a Windows DLL (`external_call`) cannot (there is no Windows
-  in the sandbox); OpenGMK's own loading of DLLs is Windows-only code and is
-  not carried.
+  game that calls a Windows DLL (`external_call`) cannot, except for the sound
+  DLLs OpenGMK answers itself and the core runs silently (there is no Windows
+  in the sandbox); any other DLL stops the game with a sentence naming it. See
+  "A Windows library the game calls (2026-11-25)".
 - **What can a test run on a public runner?** The game made here
   (`waterbox/tests/mkgame`). OpenGMK reads a game's `.exe` through its own
   reader (gm8exe), which also has the writers for every asset, so the maker is
@@ -84,7 +85,10 @@ it. A step is as long as the room's speed makes it (`GetVsyncNumerator`).
 ### What the core does not do
 
 - `external_call`/`external_define` of a DLL, GameMaker extensions' DLLs, the
-  clipboard, `execute_program`, `execute_shell`: nothing to run them on.
+  clipboard, `execute_program`, `execute_shell`: nothing to run them on. The
+  one exception is the sound DLLs listed in "A Windows library the game calls
+  (2026-11-25)", which run silently. A game that asks for any other DLL
+  stops, and the person is told which DLL.
 - `file_find_first` and the directory functions see only the files the game
   has written, and the folder it started in is empty: a game with extra files
   next to it (a sprite it loads at run time) does not find them. A game that
@@ -132,6 +136,49 @@ not implement yet."
 - Only the test game made by this repository's own tests was run. No real
   GameMaker 8 game was run: which functions real games call that OpenGMK lacks
   is not known. The owner chose to publish the core as tested on 2026-11-20.
+
+## A Windows library the game calls (2026-11-25)
+
+Some games call a Windows DLL with `external_define` and `external_call`.
+Upstream OpenGMK runs it in a helper program (`gm8emulator-wow64.exe`, through
+wine on Linux) that it starts as a second process. The sandbox has no Windows,
+no second process and no path of its own program, so upstream's code panicked
+with "no /proc/self/exe available" (issue 641, a fan game that calls a DLL).
+Decided by the owner on 2026-11-25:
+
+- A game that asks for a DLL the core cannot run stops with one sentence naming
+  it: "This game calls a Windows library (mystery.dll, function Foo), which
+  this core cannot run." Patch 0008 makes `ExternalManager::define` answer with
+  an error that carries the library's file name and the function instead of
+  starting the helper. The core turns that into the sentence
+  (`error.no_library`, in all 26 tables). If the game asks in its first event
+  the game does not start and Chimera says so as for any game that cannot
+  start; if it asks later the machine stops with the sentence as its last
+  words, as for a function OpenGMK lacks.
+- OpenGMK's own silent stand-ins for sound DLLs are on. Upstream turns them on
+  only when it records (`dummy_audio`); the core passes true, so a game that
+  only uses `gmfmodsimple.dll`, `ssound.dll`, `supersound.dll`, `sgaudio.dll`,
+  `sxms-3.dll` or `caster.dll` runs, without that sound. (`gmeffect_0.1.dll`
+  was already answered silently upstream.) Each call answers a fixed value and
+  does nothing else, so a game that checks what the DLL answered gets "all
+  zero" (or "1" from `FMODSoundAdd`, "Yes" from `SS_Init`).
+- Determinism and savestates: a stand-in reads nothing of the host and keeps no
+  state. A savestate holds only the list of declared externals (library,
+  function, types), and loading it makes the stand-ins again, so it round-trips;
+  the sound a game would have made through the DLL is not made, and the
+  core's sound is already outside the savestate. The test script checks a game
+  that uses a stand-in under a savestate before every step.
+- Not changed: a DLL inside a GameMaker extension that has no stand-in is still
+  passed over at start with a warning on the log (upstream does the same for
+  one that fails to load), and calling its functions answers 0. Which DLL a
+  real game needs, and whether any real game works now, was not tried: no game
+  was run, only the test game.
+- Tests: `mkgame <exe> dll:gmfmodsimple.dll:FMODSoundAdd` calls a stand-in at
+  its tenth step (`standin`: native, sandbox and a savestate before every step
+  agree, and the answer shows in the picture); `dll:mystery.dll:Foo` and
+  `dllc:mystery.dll:Foo` ask for an unknown DLL at the tenth step and in the
+  first event (`nolibrary`: the sentence, in the native reference, the sandbox
+  and chimera-run, and no mention of the helper program or a panic).
 
 ## What was proved (2026-11-20)
 

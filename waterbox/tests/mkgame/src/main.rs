@@ -200,6 +200,12 @@ fn help() -> Vec<u8> {
 }
 
 /// The part of the data GameMaker scrambles with a table of its own.
+/// GML that defines `func` of the Windows library `lib` (cdecl, one number in, a
+/// number out), calls it and adds what it answered, times 1000, to the score.
+fn library_call(lib: &str, func: &str, when: &str) -> String {
+    format!("{when}{{ lib_id = external_define(\"{lib}\", \"{func}\", 0, 0, 1, 0); score += 1000 * external_call(lib_id, 1); }}\n")
+}
+
 fn data_block(calls: &Option<String>) -> Vec<u8> {
     let mut d = Vec::new();
     d.write_u32::<LE>(0).unwrap(); // no garbage words
@@ -232,11 +238,14 @@ fn data_block(calls: &Option<String>) -> Vec<u8> {
     list(&mut d, 800, &[]); // fonts
     list(&mut d, 800, &[]); // timelines
     let mut events: Vec<Vec<(u32, Vec<CodeAction>)>> = (0..12).map(|_| Vec::new()).collect();
-    events[0] = vec![(0, vec![code(CREATE)])];
-    let step = match calls {
-        Some(name) => format!("{STEP}\nif (ang == 40) {name}(\"hello\");\n"),
-        None => STEP.to_string(),
-    };
+    let (mut create, mut step) = (CREATE.to_string(), STEP.to_string());
+    match calls.as_deref().map(|c| c.splitn(3, ':').collect::<Vec<_>>()).as_deref() {
+        Some(["dll", lib, func]) => step += &library_call(lib, func, "if (ang == 40) "),
+        Some(["dllc", lib, func]) => create += &library_call(lib, func, ""),
+        Some([name]) => step += &format!("if (ang == 40) {name}(\"hello\");\n"),
+        _ => {}
+    }
+    events[0] = vec![(0, vec![code(&create)])];
     events[3] = vec![(0, vec![code(&step)])];
     events[8] = vec![(0, vec![code(DRAW)])];
     let obj = Object {
@@ -354,7 +363,10 @@ fn main() {
     let out = args.next().expect("usage: mkgame OUT.exe [FUNCTION]");
     // A second argument names a GameMaker function the game calls at its
     // tenth step, to test what the core says about one OpenGMK has not
-    // implemented (show_message, for one).
+    // implemented (show_message, for one). "dll:LIBRARY:FUNCTION" makes the game
+    // define that function of a Windows library and call it at its tenth step
+    // (its answer is added to the score, so the picture shows it); "dllc:..."
+    // does the same in the first event, before the game has started.
     let calls = args.next();
     let mut exe = vec![0u8; 3_800_004];
     // MZ, and a PE header with one section
