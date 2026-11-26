@@ -125,7 +125,7 @@ run_wbx() { box "$wbx" "$core" "$game" "$@" 2> /dev/null; }
 run_native --frames 300 --digest-every 30 "${route[@]}" > "$work/n.out"
 run_wbx --frames 300 --digest-every 30 "${route[@]}" > "$work/w.out"
 
-tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented standin nolibrary extunused extcalled extstandin engine)
+tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented bigpics standin nolibrary extunused extcalled extstandin engine)
 for t in "${tests[@]}"; do
 	if [ "$breaking" = 1 ]; then BREAK="$t"; else BREAK=""; fi
 	case "$t" in
@@ -256,6 +256,27 @@ for t in "${tests[@]}"; do
 		[ "$out_n" -ge 1 ] && [ "$out_w" -ge 1 ] && { [ -z "$out_e" ] || [ "$out_e" = "1/1" ]; } && ok=1
 		verdict unimplemented "$ok" "a game that calls show_message, which OpenGMK lacks, gets a sentence naming it" \
 			"native $out_n, sandbox $out_w${out_e:+, chimera-run $out_e}"
+		;;
+	# ------------------------------------------------ a game with a lot of pictures
+	bigpics)
+		# A game with six sprites of 4096 x 4096 pixels (384 MiB): OpenGMK packs
+		# them into one texture of 16384 x 8192 pixels (512 MiB), and that, with the
+		# pictures it is made from, did not fit in the 1024 MiB the package had for
+		# memory mapped by the game ("Failed to allocate texture on GPU! (OpenGL
+		# code 1285)", issue 646). It must start and run, the same as the native
+		# run. When the test is being broken, the sandbox is given the 1024 MiB
+		# again.
+		pgame="$build/content/bigpics.exe"
+		"$mkgame" "$pgame" bigpics > /dev/null
+		"$native" "$pgame" --frames 30 --digest-every 10 > "$work/bigpics.n" 2> /dev/null
+		if [ "$breaking" = 1 ]; then export RUN_WBX_MMAP_MIB=1024; fi
+		box "$wbx" "$core" "$pgame" --frames 30 --digest-every 10 > "$work/bigpics.w" 2> "$work/bigpics.w.err"
+		unset RUN_WBX_MMAP_MIB
+		n="$(digest "$work/bigpics.n" | wc -l)"
+		ok=0
+		[ "$n" = 4 ] && diff <(digest "$work/bigpics.n") <(digest "$work/bigpics.w") > /dev/null && ok=1
+		verdict bigpics "$ok" "a game with 384 MiB of pictures starts and runs, the same as native" \
+			"$n digests; $(grep -c 'Failed to allocate texture' "$work/bigpics.w.err") texture failures"
 		;;
 	# ------------------------------------------------ a Windows library the game asks for
 	standin)

@@ -15,7 +15,8 @@ use flate2::{write::ZlibEncoder, Compression};
 use gm8exe::{
     asset::{
         code_action::PARAM_COUNT, object::Object, room, room::Room, sound::SoundFX, Asset, CodeAction, PascalString,
-        Sound, SoundKind,
+        sprite::{CollisionMap, Frame},
+        Sound, SoundKind, Sprite,
     },
     GameVersion,
 };
@@ -302,7 +303,34 @@ fn data_block(calls: &Option<String>) -> Vec<u8> {
         fx: SoundFX { chorus: false, echo: false, flanger: false, gargle: false, reverb: false },
     };
     list(&mut d, 800, &[chunk(&snd)]);
-    list(&mut d, 800, &[]); // sprites
+    // "bigpics": six sprites of 4096 x 4096 pixels (64 MiB each, 384 MiB in all),
+    // the pictures of a game that has a lot of them; they do not fit in one
+    // 8192 x 8192 texture, so the game needs one of 16384 x 8192 (512 MiB)
+    let sprites: Vec<Vec<u8>> = if let Some(["bigpics"]) = call.as_deref() {
+        (0..6)
+            .map(|i| {
+                chunk(&Sprite {
+                    name: pas(&format!("spr_big{i}")),
+                    origin_x: 0,
+                    origin_y: 0,
+                    frames: vec![Frame { width: 4096, height: 4096, data: vec![0x80u8; 4096 * 4096 * 4].into_boxed_slice() }],
+                    colliders: vec![CollisionMap {
+                        width: 1,
+                        height: 1,
+                        bbox_left: 0,
+                        bbox_right: 0,
+                        bbox_top: 0,
+                        bbox_bottom: 0,
+                        data: vec![true].into_boxed_slice(),
+                    }],
+                    per_frame_colliders: false,
+                })
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    list(&mut d, 800, &sprites);
     list(&mut d, 800, &[]); // backgrounds
     list(&mut d, 800, &[]); // paths
     list(&mut d, 800, &[]); // scripts
@@ -314,6 +342,7 @@ fn data_block(calls: &Option<String>) -> Vec<u8> {
         Some(["extcall", _, func]) => step += &format!("if (ang == 40) score += 1000 * ext_{func}(1);\n"),
         Some(["dll", lib, func]) => step += &library_call(lib, func, "if (ang == 40) "),
         Some(["dllc", lib, func]) => create += &library_call(lib, func, ""),
+        Some(["bigpics"]) => {}
         Some([name]) => step += &format!("if (ang == 40) {name}(\"hello\");\n"),
         _ => {}
     }
@@ -442,6 +471,7 @@ fn main() {
     // "ext:LIBRARY:FUNCTION" makes the game carry a GameMaker extension that holds
     // that library and function and never calls it; "extcall:..." calls it at the
     // tenth step too (the answer is added to the score as for "dll").
+    // "bigpics" gives the game six very large sprites (see data_block).
     let calls = args.next();
     let mut exe = vec![0u8; 3_800_004];
     // MZ, and a PE header with one section

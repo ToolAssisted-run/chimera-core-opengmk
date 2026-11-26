@@ -143,8 +143,12 @@ static void build_host(void)
 	phase(NULL);
 	size_t wlen;
 	uint8_t *w = slurp(g_wbx, &wlen);
-	/* matches waterbox.config memoryLayoutMiB */
-	mb_memory_layout_template layout = { 512ull << 20, 16ull << 20, 16ull << 20, 256ull << 20, 1024ull << 20 };
+	/* matches waterbox.config memoryLayoutMiB; RUN_WBX_MMAP_MIB sets the last
+	   (the mmap area) to another size, which the test script uses to run a game
+	   as the package ran it before the area was made larger */
+	unsigned long long mmap_mib = 3072;
+	if (getenv("RUN_WBX_MMAP_MIB")) mmap_mib = strtoull(getenv("RUN_WBX_MMAP_MIB"), NULL, 10);
+	mb_memory_layout_template layout = { 512ull << 20, 16ull << 20, 16ull << 20, 256ull << 20, mmap_mib << 20 };
 	reader rd = { w, wlen, 0 };
 	mb_return r;
 	wbx_create_host(&layout, "core.wbx", buf_read, (uintptr_t)&rd, &r);

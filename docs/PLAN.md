@@ -54,8 +54,9 @@ package's declarations, and runs on a game made here).
   small: it writes the Windows executable's frame, the two scramblings of the
   data and the assets (one object with GML in three events, one room, one
   generated tone). It is all this repository's own work, so it may be kept.
-- **How big is it?** `memoryLayoutMiB` 512/16/16/256/1024: a game's pictures
-  and sounds are unpacked on the heap; the test game uses little of it.
+- **How big is it?** `memoryLayoutMiB` 512/16/16/256/3072 (the last was 1024 until issue 646): a
+  game's pictures and sounds are unpacked on the heap and its textures are
+  made in the last area; the test game uses little of it.
 
 No change to Chimera or miniBox was needed.
 
@@ -204,6 +205,38 @@ Decided by the owner on 2026-11-25:
   (`extcall:gmfmodsimple.dll:FMODSoundAdd`: it runs silently on the stand-in,
   the same in both and through a savestate before every step, and the answer
   shows in the picture).
+
+## A game with a lot of pictures (2026-11-26, issue 646)
+
+Sonic.exe Nightmare Beginning (the 2017 version, a free fan game, English
+build from its author's Game Jolt page) did not start: "Failed to allocate
+texture on GPU! (OpenGL code 1285)", which is GL_OUT_OF_MEMORY. It is not the
+player's graphics card: the core draws with Mesa's softpipe inside the
+sandbox on every machine, so the same failure happens on Linux and Windows.
+
+What was seen (Linux, through `run-wbx`, the sandbox's own memory):
+
+- OpenGMK asks the OpenGL for its largest texture size (softpipe says 16384)
+  and packs all the game's sprites and backgrounds into textures that grow
+  by doubling up to that size. This game's pictures need one texture of
+  16384 x 8192 pixels, which is 512 MiB.
+- The pictures are first unpacked on the heap and then copied into that
+  texture, and both live at once. The memory the game maps itself (the last
+  number of `memoryLayoutMiB`) was 1024 MiB. miniBox printed "arena
+  exhausted: 512 MiB wanted, 442..500 MiB free", and Mesa answered
+  GL_OUT_OF_MEMORY. (With the texture limited to 8192 x 8192 it needed two
+  such textures and failed on the second one, 244 MiB free of 256 wanted.)
+- With the area at 1536 MiB the game starts; 3072 MiB was chosen so that the
+  largest texture Mesa allows (16384 x 16384, 1 GiB) also fits with the
+  pictures. Only the pages a game touches cost anything, and other cores
+  declare as much.
+
+Test: `run-gate.sh` makes a game of six sprites of 4096 x 4096 pixels
+(`mkgame OUT.exe bigpics`), runs it natively and in the sandbox and compares
+the pictures. Before the change it stops with the error above (checked by
+giving the sandbox 1024 MiB again, which is what `-b` does); after it, both
+agree. Not tried: the Windows build of the package, and a real card (the core
+never uses one).
 
 ## What was proved (2026-11-20)
 
