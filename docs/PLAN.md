@@ -92,9 +92,10 @@ it. A step is as long as the room's speed makes it (`GetVsyncNumerator`).
   (2026-11-25)", which run silently. A game that calls any other DLL stops,
   and the person is told which DLL.
 - `file_find_first` and the directory functions see only the files the game
-  has written, and the folder it started in is empty: a game with extra files
-  next to it (a sprite it loads at run time) does not find them. A game that
-  needs them is a request for a multi-file slot (docs/multi-file.md).
+  has written, and the folder it started in is empty, except for what a game
+  given as a zip brings (see "A game given as a zip (2026-11-26)"). A game
+  that loads files at run time (a sprite, a sound) from a bare .exe does not
+  find them.
 - Games for GameMaker Studio and later.
 - Video and sound capture, and OpenGMK's tool-assisted-speedrun window: those
   are Chimera's.
@@ -237,6 +238,60 @@ the pictures. Before the change it stops with the error above (checked by
 giving the sandbox 1024 MiB again, which is what `-b` does); after it, both
 agree. Not tried: the Windows build of the package, and a real card (the core
 never uses one).
+
+## A game given as a zip (2026-11-26, issue 646; the way chosen by the owner, 2026-11-26)
+
+After the memory fix above, Sonic.exe Nightmare Beginning started but stopped
+at step 63 with "nonexistent asset id -1 (sound)". The cause was found by
+reading the game's code (a small program built on OpenGMK's own `gm8exe`
+reader listed every object, script and room code):
+
+- The game has no sounds inside its .exe (all 140 sound slots are empty). Its
+  first object, `Sounder`, builds the names `working_directory +
+  "/Sound/<name>.mp3"` (or .wav) and calls `sound_add` on each.
+- The core mounted only the .exe, so every `sound_add` found no file and
+  answered -1, as GameMaker does for a missing file. The game then played
+  sound -1, and OpenGMK's `sound_play` stops on an unknown sound (its source,
+  `kernel.rs`). So the -1 was a missing-file answer, not a failure of the
+  core's sound; no stand-in DLL or extension was involved. Whether the
+  original runner tolerates `sound_play(-1)` was not looked up and was not
+  needed; the core does not change that.
+
+What was decided (owner, 2026-11-26): the game slot takes the .exe as before,
+or a .zip of the game's whole folder, as the ScummVM core's slot does. No
+other slot.
+
+- With a zip the core finds the game's .exe inside: the only .exe at any
+  depth, or, if there are several, the one OpenGMK can read as a GameMaker 8
+  game (it tries to read each; the others are setup programs and the like).
+  If none is a game, or more than one is, the game does not start and the
+  sentence names the .exe files it found ("None of the .exe files in the
+  game's zip is a GameMaker 8 game: A, B"). A zip with no .exe says so. The
+  texts are in every language the core has (translated by the agent that wrote
+  them, not reviewed by a native speaker).
+- The game's working directory is the .exe's folder inside the zip: its other
+  files, and what is below them, are read into read-only memory at start
+  (patch 0010, `memfs::put_asset`), before the machine is sealed, so
+  savestates and replays see them and they are never listed as save data. A
+  name is matched without regard to upper or lower case, as Windows does, and
+  without the game's `working_directory` in front (that is `/` in the sandbox
+  and a temporary folder in the native reference). Every read of a game's file
+  goes through `memfs` (`sound_add`, `file_exists`, `file_bin_open`...), so
+  they all find these files. Files outside the .exe's folder cannot be named by
+  the game and are dropped.
+- A plain .exe is untouched. The project pins the zip's hash as it pins the
+  .exe's.
+
+What was seen (Linux, sandbox, `run-wbx`, the real game from a zip of its
+downloaded folder): see "What was proved" in the commit; the game runs past
+step 63 where it stopped.
+
+Tests (`run-gate.sh`): `ownfiles` (a zip with `Folder/Game.EXE` and
+`Folder/Sound/tone.WAV`, the game asks for `/sound/Tone.wav`: native, sandbox
+and a savestate before every step agree, and the picture shows the sound was
+loaded, unlike the bare .exe), `zipchoice` (two .exe files that are not games
+beside the game: it runs the same), `zipnogame` (no game in the zip: refused
+with the .exe files named; no .exe: says so). Each was broken on purpose once.
 
 ## What was proved (2026-11-20)
 

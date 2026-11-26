@@ -343,6 +343,11 @@ fn data_block(calls: &Option<String>) -> Vec<u8> {
         Some(["dll", lib, func]) => step += &library_call(lib, func, "if (ang == 40) "),
         Some(["dllc", lib, func]) => create += &library_call(lib, func, ""),
         Some(["bigpics"]) => {}
+        // loads a sound from a file that sat beside the game, in another case, and
+        // adds 1000 to the score if that worked (sound_add answers -1 if not)
+        Some(["ownfiles"]) => {
+            step += "if (ang == 40) score += 1000 * (sound_add(working_directory + \"/sound/Tone.wav\", 0, 1) > 0);\n"
+        }
         Some([name]) => step += &format!("if (ang == 40) {name}(\"hello\");\n"),
         _ => {}
     }
@@ -471,7 +476,8 @@ fn main() {
     // "ext:LIBRARY:FUNCTION" makes the game carry a GameMaker extension that holds
     // that library and function and never calls it; "extcall:..." calls it at the
     // tenth step too (the answer is added to the score as for "dll").
-    // "bigpics" gives the game six very large sprites (see data_block).
+    // "bigpics" gives the game six very large sprites (see data_block);
+    // "ownfiles" has it load a sound from its own Sound folder at its tenth step.
     let calls = args.next();
     let mut exe = vec![0u8; 3_800_004];
     // MZ, and a PE header with one section

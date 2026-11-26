@@ -3,8 +3,9 @@
 [OpenGMK](https://github.com/OpenGMK/OpenGMK)'s runner for games made with
 GameMaker 8.0 and 8.1 as a [Chimera](https://github.com/ToolAssisted-run/chimera)
 core, running in miniBox's sandbox. A project is one game: the `.exe` the
-player brings (optionally, the save data an earlier session exported). The core
-carries no game.
+player brings, or a `.zip` of the game's folder for a game that loads files from
+beside its `.exe` (a Sound folder, for one), and optionally the save data an
+earlier session exported. The core carries no game.
 
 - The keyboard and the mouse a GameMaker game reads: 103 keys and buttons, and
   the pointer across the game's window.
@@ -39,7 +40,8 @@ page, or build it, and put it in the `cores` folder beside Chimera's program (or
 the folder chosen in Tools > Core Manager... > Change folder...). Tools > Core
 Manager... lists the cores in that folder. The same package works on Linux and
 on Windows. You bring the game: a game made with GameMaker 8.0 or 8.1, as its
-`.exe`. Games made with GameMaker Studio or later do not run here.
+`.exe`, or as a `.zip` of its folder (the core finds the game's `.exe` in it). Games
+made with GameMaker Studio or later do not run here.
 
 ## Building
 

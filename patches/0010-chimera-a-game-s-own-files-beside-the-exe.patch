@@ -1,0 +1,86 @@
+--- a/gm8emulator/src/memfs.rs
++++ b/gm8emulator/src/memfs.rs
+@@ -23,6 +23,57 @@
+     unsafe { &mut FILES }
+ }
+ 
++/// The game's own files, the ones that sit beside its .exe (a Sound folder, for
++/// one): put by the core at the start from the game's zip, read
++/// only, and never listed with what the game wrote. Windows does not tell
++/// upper from lower case in a file name, so the name is the key in lower case,
++/// with `/` for the backslash and no leading `/` or `./`.
++static mut ASSETS: BTreeMap<String, Vec<u8>> = BTreeMap::new();
++
++#[allow(static_mut_refs)]
++fn assets() -> &'static mut BTreeMap<String, Vec<u8>> {
++    unsafe { &mut ASSETS }
++}
++
++fn plain_key(path: &str) -> String {
++    path.replace('\\', "/")
++        .to_lowercase()
++        .split('/')
++        .filter(|part| !part.is_empty() && *part != ".")
++        .collect::<Vec<_>>()
++        .join("/")
++}
++
++/// The name a game's file is kept under. The folder the machine runs in (the
++/// game's `working_directory`) is dropped from the front, so a game that asks
++/// for `working_directory + "/Sound/a.wav"` finds `Sound/a.wav` wherever that
++/// folder is: `/` in the sandbox, a temporary folder in the native reference.
++fn asset_key(path: &str) -> String {
++    let key = plain_key(path);
++    if let Ok(cwd) = std::env::current_dir() {
++        let cwd = plain_key(&cwd.to_string_lossy());
++        if !cwd.is_empty() {
++            if let Some(rest) = key.strip_prefix(&cwd).and_then(|rest| rest.strip_prefix('/')) {
++                return rest.to_string();
++            }
++        }
++    }
++    key
++}
++
++/// Puts one of the game's own files, read only.
++pub fn put_asset(path: &str, contents: Vec<u8>) {
++    assets().insert(asset_key(path), contents);
++}
++
++/// A file the project brought: one of the game's own files, else a mounted one.
++fn mounted(path: &str) -> io::Result<Vec<u8>> {
++    match assets().get(&asset_key(path)) {
++        Some(data) => Ok(data.clone()),
++        None => std::fs::read(path),
++    }
++}
++
+ fn text(path: &impl AsRef<std::path::Path>) -> String {
+     path.as_ref().to_string_lossy().into_owned()
+ }
+@@ -50,14 +101,14 @@
+ /// Whether the game has written the file, or the project mounted it.
+ pub fn exists(path: impl AsRef<std::path::Path>) -> bool {
+     let path = text(&path);
+-    files().contains_key(&key(&path)) || std::path::Path::new(&path).is_file()
++    files().contains_key(&key(&path)) || assets().contains_key(&asset_key(&path)) || std::path::Path::new(&path).is_file()
+ }
+ 
+ pub fn read(path: impl AsRef<std::path::Path>) -> io::Result<Vec<u8>> {
+     let path = text(&path);
+     match files().get(&key(&path)) {
+         Some(data) => Ok(data.clone()),
+-        None => std::fs::read(&path),
++        None => mounted(&path),
+     }
+ }
+ 
+@@ -135,7 +186,7 @@
+                 if self.write || self.append {
+                     return Err(io::Error::from(io::ErrorKind::NotFound));
+                 }
+-                let data = std::fs::read(path)?;
++                let data = mounted(path)?;
+                 files().insert(k.clone(), data);
+                 return Ok(File { key: k, pos: 0, read: true, write: false, append: false, mounted: true });
+             }

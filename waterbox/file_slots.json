@@ -1,5 +1,5 @@
 {
-  "_comment": "This file lists the kinds of file a GameMaker 8 project can hold. Chimera's New Project window is built from it. A project is one game: the .exe the player brings, and optionally what the game already saved.",
+  "_comment": "This file lists the kinds of file a GameMaker 8 project can hold. Chimera's New Project window is built from it. A project is one game: the .exe the player brings (or a zip of the game's folder, for a game that loads files from beside its .exe), and optionally what the game already saved.",
   "slots": [
     {
       "id": "game",
@@ -7,7 +7,8 @@
       "min": 1,
       "max": 1,
       "formats": [
-        "exe"
+        "exe",
+        "zip"
       ],
       "help": "slot.game.help"
     },

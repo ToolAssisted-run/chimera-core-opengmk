@@ -284,22 +284,73 @@ impl Settings {
 /// The files of a save-data zip (what Export Save Data writes): the files the
 /// game wrote, by the names it gave them.
 pub fn read_save_zip(bytes: &[u8]) -> Result<Vec<(String, Vec<u8>)>, String> {
+    read_zip(bytes, "error.save_not_zip", "error.save_entry")
+}
+
+/// The files of a zip, by name, in name order. The two texts say what went
+/// wrong, for save data and for the game's zip.
+fn read_zip(bytes: &[u8], not_zip: &str, entry: &str) -> Result<Vec<(String, Vec<u8>)>, String> {
     use std::io::Read;
-    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
-        .map_err(|e| say("error.save_not_zip", &[&e.to_string()]))?;
+    let mut zip =
+        zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| say(not_zip, &[&e.to_string()]))?;
     let mut out = Vec::new();
     for i in 0..zip.len() {
-        let mut f = zip.by_index(i).map_err(|e| say("error.save_not_zip", &[&e.to_string()]))?;
+        let mut f = zip.by_index(i).map_err(|e| say(not_zip, &[&e.to_string()]))?;
         if f.is_dir() {
             continue;
         }
-        let name = f.name().to_string();
+        let name = f.name().replace('\\', "/");
         let mut data = Vec::new();
-        f.read_to_end(&mut data).map_err(|e| say("error.save_entry", &[&name, &e.to_string()]))?;
+        f.read_to_end(&mut data).map_err(|e| say(entry, &[&name, &e.to_string()]))?;
         out.push((name, data));
     }
     out.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(out)
+}
+
+/// Whether OpenGMK can read a file as a GameMaker 8 game.
+fn is_gm8_game(exe: &[u8]) -> bool {
+    let mut copy = exe.to_vec();
+    gm8exe::reader::from_exe(&mut copy, None::<fn(&str)>, false, false).is_ok()
+}
+
+/// A game's zip: the folder of the game. The game is the one .exe in it, at any
+/// depth; if there are several, the one OpenGMK can read as a GameMaker 8 game.
+/// Returns the .exe's name and bytes, and puts every other file of the .exe's
+/// folder (and below) where the game finds it: by its name from that folder, in
+/// read-only memory, whatever the case.
+fn game_from_zip(bytes: &[u8]) -> Result<(String, Vec<u8>), String> {
+    let mut files = read_zip(bytes, "error.game_not_zip", "error.game_entry")?;
+    let exes: Vec<usize> = (0..files.len()).filter(|&i| files[i].0.to_lowercase().ends_with(".exe")).collect();
+    let names = |list: &[usize]| list.iter().map(|&i| files[i].0.as_str()).collect::<Vec<_>>().join(", ");
+    let chosen = match exes.as_slice() {
+        [] => return Err(say("error.zip_no_exe", &[])),
+        [one] => *one,
+        many => {
+            let games: Vec<usize> = many.iter().copied().filter(|&i| is_gm8_game(&files[i].1)).collect();
+            match games.as_slice() {
+                [] => return Err(say("error.zip_no_game", &[&names(many)])),
+                [one] => *one,
+                several => return Err(say("error.zip_many_games", &[&names(several)])),
+            }
+        }
+    };
+    let (exe_path, exe) = std::mem::take(&mut files[chosen]);
+    let folder = match exe_path.rfind('/') {
+        Some(at) => exe_path[..=at].to_string(),
+        None => String::new(),
+    };
+    for (name, data) in files {
+        // a file outside the game's folder is not one the game can name
+        if name.is_empty() {
+            continue; // the .exe, taken
+        }
+        if let Some(inside) = name.strip_prefix(&folder) {
+            gm8emulator::memfs::put_asset(inside, data);
+        }
+    }
+    let short = exe_path[folder.len()..].to_string();
+    Ok((short, exe))
 }
 
 /// Make the game from a GameMaker 8 executable. Nothing runs until the first
@@ -369,11 +420,21 @@ pub extern "C" fn Init() -> i32 {
     };
     let base = name.rsplit('/').next().unwrap_or(&name).to_string();
     let path = if std::path::Path::new(&base).is_file() { base } else { name };
-    let exe = match read_mount(&path) {
+    let file = match read_mount(&path) {
         Ok(b) => b,
         Err(e) => return fail(e),
     };
-    let short = path.rsplit('/').next().unwrap_or(&path).to_string();
+    let short_file = path.rsplit('/').next().unwrap_or(&path).to_string();
+    // A game is its .exe, or a zip of its folder (a game that loads files from
+    // beside its .exe, a Sound folder for one, needs the zip).
+    let (short, exe) = if short_file.to_lowercase().ends_with(".zip") {
+        match game_from_zip(&file) {
+            Ok(game) => game,
+            Err(e) => return fail(e),
+        }
+    } else {
+        (short_file, file)
+    };
     // What the game saved before: the .zip Export Save Data writes, put where
     // the game finds its files.
     if let Some(zip_name) = slot_first("savedata") {

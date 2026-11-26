@@ -91,6 +91,29 @@ if systemd-run --user --scope -q true 2>/dev/null; then
 else
 	box() { "$@"; }
 fi
+# a zip of files, every entry dated the same so the file is a function of its
+# contents: make_zip OUT.zip NAME=PATH...
+make_zip() {
+	python3 - "$@" <<'PY'
+import sys, zipfile
+out = sys.argv[1]
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+    for arg in sys.argv[2:]:
+        name, path = arg.split("=", 1)
+        info = zipfile.ZipInfo(name, (2026, 11, 26, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        z.writestr(info, open(path, "rb").read())
+PY
+}
+# a short sine wave as a .wav file
+make_tone() {
+	python3 - "$1" <<'PY'
+import math, struct, sys, wave
+with wave.open(sys.argv[1], "wb") as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(8000)
+    w.writeframes(b"".join(struct.pack("<h", int(8000 * math.sin(i / 5.0))) for i in range(800)))
+PY
+}
 # digest lines only: what the game prints on stdout is not the machine's state
 digest() { grep -E '^(frame |frames=)' "$1"; }
 button() { python3 "$here/input-table.py" --index "$1"; }
@@ -125,7 +148,7 @@ run_wbx() { box "$wbx" "$core" "$game" "$@" 2> /dev/null; }
 run_native --frames 300 --digest-every 30 "${route[@]}" > "$work/n.out"
 run_wbx --frames 300 --digest-every 30 "${route[@]}" > "$work/w.out"
 
-tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented bigpics standin nolibrary extunused extcalled extstandin engine)
+tests=(equal repeat stall rerecord session input settings clock sound save pokes refusal unimplemented bigpics ownfiles zipchoice zipnogame standin nolibrary extunused extcalled extstandin engine)
 for t in "${tests[@]}"; do
 	if [ "$breaking" = 1 ]; then BREAK="$t"; else BREAK=""; fi
 	case "$t" in
@@ -277,6 +300,80 @@ for t in "${tests[@]}"; do
 		[ "$n" = 4 ] && diff <(digest "$work/bigpics.n") <(digest "$work/bigpics.w") > /dev/null && ok=1
 		verdict bigpics "$ok" "a game with 384 MiB of pictures starts and runs, the same as native" \
 			"$n digests; $(grep -c 'Failed to allocate texture' "$work/bigpics.w.err") texture failures"
+		;;
+	# ------------------------------------------------ a game that is a zip of its folder
+	ownfiles)
+		# A game that loads a sound with sound_add from the Sound folder beside its
+		# .exe (Sonic.exe Nightmare Beginning loads 140 this way, and stopped at
+		# its first sound_play with "nonexistent asset id -1", issue 646). The
+		# game slot takes a zip of the game's folder: with it the sound is loaded
+		# (the score is 1000 higher in the picture), the same in both and through a
+		# savestate before every step; with the bare .exe sound_add answers -1. The
+		# game's .exe and its folder are in another folder of the zip and in other
+		# cases (Game.EXE, sound/tone.wav; the game asks for sound/Tone.wav).
+		# When the test is being broken, the bare .exe is run.
+		fgame="$build/content/ownfiles.exe"
+		"$mkgame" "$fgame" ownfiles > /dev/null
+		make_tone "$work/tone.wav"
+		make_zip "$build/content/ownfiles.zip" "Folder/Game.EXE=$fgame" "Folder/Sound/tone.WAV=$work/tone.wav"
+		if [ "$breaking" = 1 ]; then fz="$fgame"; else fz="$build/content/ownfiles.zip"; fi
+		"$native" "$fz" --frames 100 --digest-every 20 > "$work/ownfiles.n" 2> /dev/null
+		box "$wbx" "$core" "$fz" --frames 100 --digest-every 20 > "$work/ownfiles.w" 2> /dev/null
+		box "$wbx" "$core" "$fz" --frames 100 --digest-every 20 --rerecord > "$work/ownfiles.r" 2> /dev/null
+		"$native" "$fgame" --frames 100 --digest-every 20 > "$work/ownfiles.plain" 2> /dev/null
+		a="$(digest "$work/ownfiles.n" | tail -1 | awk '{print $3,$4}')"
+		b="$(digest "$work/ownfiles.plain" | tail -1 | awk '{print $3,$4}')"
+		n="$(digest "$work/ownfiles.n" | wc -l)"
+		ok=0
+		[ "$n" = 6 ] && [ -n "$a" ] && [ "$a" != "$b" ] && diff <(digest "$work/ownfiles.n") <(digest "$work/ownfiles.w") > /dev/null &&
+			diff <(digest "$work/ownfiles.n") <(digest "$work/ownfiles.r") > /dev/null && ok=1
+		verdict ownfiles "$ok" "a game that is a zip of its folder finds its own files, the same in both and through savestates" \
+			"$n digests; the picture shows the sound was loaded"
+		;;
+	zipchoice)
+		# A zip with two .exe files that are not GameMaker games (a setup program, a
+		# patcher) beside the game: the game is the one OpenGMK can read, and it
+		# runs as in the test above. When the test is being broken the game is left
+		# out of the zip.
+		fgame="$build/content/ownfiles.exe"
+		"$mkgame" "$fgame" ownfiles > /dev/null
+		make_tone "$work/tone.wav"
+		printf 'MZ this is not a GameMaker game' > "$work/setup.exe"
+		printf 'MZ neither is this' > "$work/patch.exe"
+		if [ "$breaking" = 1 ]; then ge=("zz/notes.txt=$work/tone.wav"); else ge=("Game/Game.exe=$fgame"); fi
+		make_zip "$build/content/zipchoice.zip" "Tools/setup.exe=$work/setup.exe" "patch.EXE=$work/patch.exe" "${ge[@]}" "Game/Sound/tone.wav=$work/tone.wav"
+		box "$wbx" "$core" "$build/content/zipchoice.zip" --frames 100 --digest-every 20 > "$work/zipchoice.w" 2> /dev/null
+		"$native" "$build/content/zipchoice.zip" --frames 100 --digest-every 20 > "$work/zipchoice.n" 2> /dev/null
+		n="$(digest "$work/zipchoice.n" | wc -l)"
+		ok=0
+		[ "$n" = 6 ] && diff <(digest "$work/zipchoice.n") <(digest "$work/zipchoice.w") > /dev/null &&
+			diff <(digest "$work/zipchoice.n") <(digest "$work/ownfiles.n") > /dev/null && ok=1
+		verdict zipchoice "$ok" "a zip with two .exe files that are not games and the game runs the game, the same as the zip without them" \
+			"$n digests"
+		;;
+	zipnogame)
+		# A zip with no GameMaker game in it is refused with a text that names
+		# the .exe files it holds, in both; so is a zip with no .exe at all. When
+		# the test is being broken the game is put into the zip.
+		fgame="$build/content/ownfiles.exe"
+		"$mkgame" "$fgame" ownfiles > /dev/null
+		printf 'MZ this is not a GameMaker game' > "$work/setup.exe"
+		printf 'MZ neither is this' > "$work/patch.exe"
+		if [ "$breaking" = 1 ]; then ge=("Game/Game.exe=$fgame"); else ge=(); fi
+		make_zip "$build/content/zipnogame.zip" "Tools/setup.exe=$work/setup.exe" "patch.EXE=$work/patch.exe" "${ge[@]}"
+		make_zip "$build/content/zipnoexe.zip" "readme.txt=$work/setup.exe"
+		# the core says the text's key and its arguments; the window turns them into
+		# the sentence of the player's language
+		key="error.zip_no_game"
+		names="Tools/setup.exe, patch.EXE"
+		key2="error.zip_no_exe"
+		out_n="$("$native" "$build/content/zipnogame.zip" --frames 5 2>&1 >/dev/null | grep -F "$key" | grep -c -F "$names")"
+		out_w="$(box "$wbx" "$core" "$build/content/zipnogame.zip" --frames 5 2>&1 >/dev/null | grep -F "$key" | grep -c -F "$names")"
+		out2_n="$("$native" "$build/content/zipnoexe.zip" --frames 5 2>&1 >/dev/null | grep -c -F "$key2")"
+		out2_w="$(box "$wbx" "$core" "$build/content/zipnoexe.zip" --frames 5 2>&1 >/dev/null | grep -c -F "$key2")"
+		ok=0; [ "$out_n" -ge 1 ] && [ "$out_w" -ge 1 ] && [ "$out2_n" -ge 1 ] && [ "$out2_w" -ge 1 ] && ok=1
+		verdict zipnogame "$ok" "a zip with no GameMaker game is refused naming its .exe files, and one with no .exe says so, in both" \
+			"native $out_n/$out2_n, sandbox $out_w/$out2_w"
 		;;
 	# ------------------------------------------------ a Windows library the game asks for
 	standin)

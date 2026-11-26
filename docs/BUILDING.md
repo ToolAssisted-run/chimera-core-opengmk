@@ -67,6 +67,9 @@ keyboard, the mouse, the date, `random()` and files). Nothing else is needed.
 | a file that is not a game | it is refused, with its reason, in both |
 | a function OpenGMK lacks | a game that calls `show_message` stops with "This game called show_message, which OpenGMK does not implement yet.", in both and through chimera-run |
 | a game with a lot of pictures | a game of six 4096 x 4096 sprites (384 MiB) starts and runs in the sandbox, the same as native (it needs a 512 MiB texture) |
+| a game that is a zip of its folder | the game slot takes a zip: the game's .exe is found in it (in another folder and case), a sound it loads from the folder beside it is found: same in both and through savestates, and the picture shows it |
+| a zip with other .exe files | two .exe files that are not games beside the game: the game runs, the same |
+| a zip with no game | refused with a sentence naming the .exe files it holds, and one with no .exe says so, in both |
 | a sound DLL's stand-in | a game that calls `gmfmodsimple.dll` runs, the same in both and through a savestate before every step, and its answer shows in the picture |
 | a DLL that cannot run | a game that calls `mystery.dll` stops (at its tenth step) or does not start (in its first event), with a sentence naming the DLL and the function, in both and through chimera-run, and no panic text |
 | an extension's library, never called | a game that carries a GameMaker extension with `mystery.dll` and never calls it starts and runs: the same digests as the game without it, in both |
@@ -86,14 +89,17 @@ Then Chimera's contract tests on the package:
 
 ## Trying a real game
 
-Only the test game has been run so far; no real GameMaker 8 game has.
+The test game is the only one the test script runs. One real game, Sonic.exe
+Nightmare Beginning (2017), was tried by hand (docs/PLAN.md, issue 646).
 
 ```sh
 build/wbx/run-wbx build/wbx/core.wbx /path/to/game.exe --frames 600 --digest-every 100 --screenshot 599=/tmp/last.tga
 build/run-native/release/run-native /path/to/game.exe --frames 600 --digest-every 100
 ```
 
-The two print the same lines when the game plays the same in both. In Chimera,
+The two print the same lines when the game plays the same in both.
+A game that loads files from beside its `.exe` (a Sound folder) is given as a
+`.zip` of its folder, to both runners as to Chimera's game slot. In Chimera,
 create a project with the `.exe` in the Game slot.
 
 ## Troubleshooting
