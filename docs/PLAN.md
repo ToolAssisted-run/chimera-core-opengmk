@@ -239,6 +239,23 @@ giving the sandbox 1024 MiB again, which is what `-b` does); after it, both
 agree. Not tried: the Windows build of the package, and a real card (the core
 never uses one).
 
+## Speed on a real game (2026-11-27, issue 665)
+
+Sonic.exe Nightmare Beginning (2017) plays at about 2.5 steps a second in its
+data-select screen on a machine under heavy load, native and sandbox alike
+(the game asks for 60). Measured: about 90 percent of the time is softpipe
+running the game's pixel shader in its interpreter (about 475,000 pixels and
+3 million shader instructions a step); sampling the textures, the 16384 x 8192
+texture, the copy of the picture and the sandbox itself are each under 5
+percent. The sandbox does not slow the picture down: the native reference is
+as slow.
+
+Mesa is now built with `-Dbuildtype=release` (optimization level 3, no
+assertions) for both flavours: 1.2 to 1.4 times as many steps a second, the
+same picture (digests at steps 500, 600 and 700, native and sandbox, equal to
+the build before). Nothing that would change the picture was changed; the
+options measured are in issue 665.
+
 ## A game given as a zip (2026-11-26, issue 646; the way chosen by the owner, 2026-11-26)
 
 After the memory fix above, Sonic.exe Nightmare Beginning started but stopped

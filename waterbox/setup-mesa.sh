@@ -122,7 +122,14 @@ fi
 opts="-Dforce_fallback_for=zlib,expat -Dgallium-drivers=swrast -Dvulkan-drivers= \
   -Dllvm=disabled -Dosmesa=true -Dopengl=true -Dglx=disabled -Degl=disabled \
   -Dgbm=disabled -Dglvnd=false -Dplatforms= -Dgles1=disabled -Dgles2=disabled \
-  -Ddefault_library=static -Dbuild-tests=false -Dzstd=disabled -Dshared-glapi=disabled"
+  -Ddefault_library=static -Dbuild-tests=false -Dzstd=disabled -Dshared-glapi=disabled \
+  -Dbuildtype=release"
+
+# -Dbuildtype=release (issue 665): optimization level 3 instead of Mesa's default 2, and no
+# assertions. softpipe runs a game's shaders in an interpreter, so the compiler's work on it
+# is speed; measured on Sonic.exe Nightmare Beginning, the same picture, about 1.2 to 1.4
+# times as many steps a second. The floating point stays IEEE (no -ffast-math, no -march), so
+# the picture does not depend on the compiler's level.
 
 # Neither flavour may see the host's optional libraries: the guest because it
 # cannot link them, the host because then the two would not be the same Mesa.
