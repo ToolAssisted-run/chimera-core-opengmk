@@ -127,3 +127,8 @@ char* getcwd(char* buf, size_t size)
 }
 
 }  // extern "C"
+
+// miniBox machine spec 3 (docs/MACHINE-SPEC.md): llvmpipe's code generator maps
+// memory with a bare address hint, which spec 2 takes as a fixed address
+// whether or not the pages are free; spec 3 puts it elsewhere.
+extern "C" __attribute__((visibility("default"), used)) const uint32_t __wbx_machine_spec = 3;

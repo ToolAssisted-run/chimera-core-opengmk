@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# Builds the OpenGL this core draws through: Mesa's softpipe driver behind the
-# gallium OSMesa front end, no LLVM - twice, from one pinned tarball with one
-# set of options: once cross-built for the miniBox guest, once for the host.
+# Builds the OpenGL this core draws through: Mesa's llvmpipe driver behind
+# the gallium OSMesa front end - twice, from one pinned tarball with one set
+# of options: once cross-built for the miniBox guest, once for the host.
 #
-# OpenGMK draws a game with OpenGL 3.3 shaders. The GPU bridge would put the
-# game's textures on a card, outside the savestate, and there is no GPU inside
-# a sandbox anyway, so the core brings its own OpenGL. softpipe is plain C - no
-# JIT, no dispatch on host CPU features - so it draws the same picture on every
-# machine, which is the only kind of renderer a core that replays movies can
-# use; and on it OSMesa's context is a 3.3 compatibility one, which OpenGMK's
-# shaders accept.
+# Godot's Compatibility renderer draws with OpenGL 3.3, and there is no GPU
+# inside a sandbox, so the core brings its own OpenGL. llvmpipe turns each
+# shader into machine code with LLVM (build-llvm.sh), where softpipe, the
+# other software driver, interprets it pixel by pixel and was most of every
+# frame's time. llvmpipe is told of one CPU on every computer (patch
+# mesa-patches/0001: an x86-64 with SSE2, one processor), so the code it
+# makes, and every picture, is the same everywhere, and it starts no threads.
 #
 # Why the host gets the SAME Mesa: a game can ask its OpenGL questions
-# (draw_getpixel and the surface functions read the picture back) and act on
-# the answers, so the OpenGL is part of the machine. The native reference has
-# to answer as the sandbox does, or the two builds stop being the same machine.
+# (glGetString, the limits, reading pixels back) and act on the answers, so
+# the OpenGL is part of the machine. The native reference has to answer as
+# the sandbox does, or the two builds stop being the same machine.
 #
-# Copied from chimera-core-pcsx2 (same release, 24.0.9, same SHA256, same
-# options), plus the host flavour.
+# The recipe started as chimera-core-rsdkv4's (Mesa 24.0.9, the same SHA256),
+# with LLVM added.
 #
 # Produces:  build/mesa/build-guest2/  the *.a archives plus the gallium osmesa
 #                                      target.c.o that the guest build links;
@@ -86,15 +86,25 @@ echo "$sha256  $tarball" | sha256sum -c - >/dev/null || {
 if [ ! -d "$mesa/src/gallium" ]; then
 	mkdir -p "$mesa"
 	tar -xf "$tarball" -C "$mesa" --strip-components=1
+	for p in "$here"/mesa-patches/*.patch; do
+		[ -f "$p" ] || continue
+		echo "mesa: applying $(basename "$p")"
+		patch -d "$mesa" -p1 --quiet < "$p"
+	done
 fi
-# x86-64: Mesa's hand-written GL dispatch (glapi_x86-64.S) reads the thread's
-# GL context at an offset from %fs, which an Intel Mac cannot run. Without the
-# assembly Mesa dispatches in C, which reads it as any other thread local.
-sed -i "/^elif host_machine.cpu_family() == 'x86_64'\$/{n;s/^  if system_has_kms_drm\$/  if false # Chimera: no x86-64 assembly/}" "$mesa/meson.build"
-grep -A1 "^elif host_machine.cpu_family() == 'x86_64'\$" "$mesa/meson.build" | grep -q "if false" || {
-	echo "mesa: its x86-64 assembly could not be turned off" >&2
-	exit 1
-}
+# a tree extracted before the patches were there is not this Mesa
+for p in "$here"/mesa-patches/*.patch; do
+	[ -f "$p" ] || continue
+	patch -d "$mesa" -p1 --dry-run -R --quiet < "$p" > /dev/null 2>&1 || {
+		echo "mesa: $mesa lacks $(basename "$p"); remove build/mesa and run again" >&2
+		exit 1
+	}
+done
+
+# LLVM for llvmpipe (build-llvm.sh): its llvm-config, which for the guest
+# answers with the guest build's folders
+llvm_native="$root/build/llvm-native"
+[ -x "$llvm_native/bin/llvm-config" ] || { echo "mesa: build LLVM first (waterbox/build-llvm.sh native, and guest for the guest)" >&2; exit 1; }
 
 # Prefer a system meson that already has what Mesa needs; fall back to a
 # private venv. Mesa's version check needs `packaging` (3.12 dropped
@@ -103,7 +113,7 @@ meson=""
 if command -v meson >/dev/null && python3 -c "import mako, packaging" 2>/dev/null; then
 	meson="$(command -v meson)"
 else
-	venv="${MESA_BUILD_VENV:-$HOME/.cache/chimera-mesa-build-venv}"
+	venv="${MESA_BUILD_VENV:-$root/build/mesa-build-venv}"
 	if [ ! -x "$venv/bin/meson" ]; then
 		python3 -m venv "$venv" || {
 			echo "mesa: no usable meson - install python3-venv, or meson plus python3-mako" >&2
@@ -119,17 +129,10 @@ fi
 # -Dshared-glapi=disabled is ESSENTIAL for the guest: otherwise
 # _glapi_tls_Context lands only in a .so this core cannot link. zlib/expat are
 # vendored via wraps.
-opts="-Dforce_fallback_for=zlib,expat -Dgallium-drivers=swrast -Dvulkan-drivers= \
-  -Dllvm=disabled -Dosmesa=true -Dopengl=true -Dglx=disabled -Degl=disabled \
+opts="-Dforce_fallback_for=zlib,expat -Dgallium-drivers=swrast -Dbuildtype=release -Dshader-cache=disabled -Dvulkan-drivers= \
+  -Dllvm=enabled -Dshared-llvm=disabled -Dosmesa=true -Dopengl=true -Dglx=disabled -Degl=disabled \
   -Dgbm=disabled -Dglvnd=false -Dplatforms= -Dgles1=disabled -Dgles2=disabled \
-  -Ddefault_library=static -Dbuild-tests=false -Dzstd=disabled -Dshared-glapi=disabled \
-  -Dbuildtype=release"
-
-# -Dbuildtype=release (issue 665): optimization level 3 instead of Mesa's default 2, and no
-# assertions. softpipe runs a game's shaders in an interpreter, so the compiler's work on it
-# is speed; measured on Sonic.exe Nightmare Beginning, the same picture, about 1.2 to 1.4
-# times as many steps a second. The floating point stays IEEE (no -ffast-math, no -march), so
-# the picture does not depend on the compiler's level.
+  -Ddefault_library=static -Dbuild-tests=false -Dzstd=disabled -Dshared-glapi=disabled"
 
 # Neither flavour may see the host's optional libraries: the guest because it
 # cannot link them, the host because then the two would not be the same Mesa.
@@ -141,8 +144,22 @@ PKG_CONFIG_PATH=""
 export PKG_CONFIG_LIBDIR PKG_CONFIG_PATH
 
 if [ "$native" = 1 ]; then
-	setup_args=""
+	cat > "$mesa/native.ini" <<NATIVEINI
+[binaries]
+llvm-config = '$llvm_native/bin/llvm-config'
+
+[built-in options]
+c_args = ['-DCHIMERA_PINNED_CPU', '-fcf-protection=none']
+cpp_args = ['-DCHIMERA_PINNED_CPU', '-fcf-protection=none']
+NATIVEINI
+	setup_args="--native-file $mesa/native.ini"
 else
+	llvm_guest="$root/build/llvm-guest"
+	[ -f "$llvm_guest/.chimera-built" ] || { echo "mesa: build the guest LLVM first (waterbox/build-llvm.sh guest)" >&2; exit 1; }
+	# the native llvm-config, answering with the guest LLVM's folders
+	printf '#!/bin/sh\nout="$("%s/bin/llvm-config" "$@")" || exit $?\nprintf "%%s\\n" "$out" | sed "s|%s|%s|g"\n' \
+		"$llvm_native" "$llvm_native" "$llvm_guest" > "$mesa/llvm-config-guest"
+	chmod +x "$mesa/llvm-config-guest"
 	# single-`-specs` wrapper compilers: passing -specs through meson's *_args
 	# doubles it and the specs file errors, so the flag rides inside the compiler.
 	cat > "$mesa/gw-cc"  <<EOF
@@ -180,6 +197,7 @@ cpp = '$mesa/gw-cxx'
 ar = 'ar'
 strip = 'strip'
 pkg-config = 'pkg-config'
+llvm-config = '$mesa/llvm-config-guest'
 
 [host_machine]
 system = 'linux'
@@ -191,8 +209,8 @@ endian = 'little'
 needs_exe_wrapper = true
 
 [built-in options]
-c_args = ['-mcmodel=large', '-mstack-protector-guard=global', '-fno-stack-protector', '-fno-pic', '-fno-pie', '-fcf-protection=none', '-idirafter', '$uapi']
-cpp_args = ['-mcmodel=large', '-mstack-protector-guard=global', '-fno-stack-protector', '-fno-pic', '-fno-pie', '-fcf-protection=none', '-fexceptions', '-I$sr/include/c++/$gccver', '-I$sr/include/c++/$gccver/x86_64-linux-musl', '-idirafter', '$uapi']
+c_args = ['-DCHIMERA_PINNED_CPU', '-mcmodel=large', '-mstack-protector-guard=global', '-fno-stack-protector', '-fno-pic', '-fno-pie', '-fcf-protection=none', '-idirafter', '$uapi']
+cpp_args = ['-DCHIMERA_PINNED_CPU', '-mcmodel=large', '-mstack-protector-guard=global', '-fno-stack-protector', '-fno-pic', '-fno-pie', '-fcf-protection=none', '-fexceptions', '-I$sr/include/c++/$gccver', '-I$sr/include/c++/$gccver/x86_64-linux-musl', '-idirafter', '$uapi']
 EOF
 	setup_args="--cross-file $mesa/guest-cross.ini"
 fi
@@ -205,13 +223,23 @@ fi
 
 [ "${MESA_BUILD_CONFIGURE_ONLY:-}" = 1 ] && { echo "mesa: configured OK (configure-only)"; exit 0; }
 
-# Mesa's final shared osmesa .so fails to link for the guest (__dso_handle,
-# -fno-pic, large model; at -O3 also __popcountdi2, which the guest build gets
-# from libgcc when it links the archives) - EXPECTED, and the host flavour is
-# not affected (its .so links). The guest links the static archives plus
-# the target's own object, both built before that step, so the .so failure is
-# tolerated there and the artifacts that are actually needed are checked.
-"$meson" compile -C "$build" -j "$jobs" || [ "$native" = 0 ]
+# Mesa's final shared osmesa .so fails to link (for the guest: __dso_handle,
+# -fno-pic, the large model; for both: LLVM is built without PIC) - EXPECTED.
+# The core links the static archives plus the target's own object, built
+# before that step, so a failure is tolerated when nothing but that .so is
+# left to build.
+compile_log="$build/chimera-compile.log"
+if ! "$meson" compile -C "$build" -j "$jobs" > "$compile_log" 2>&1; then
+	# keep going past the .so, then see what else failed
+	ninja -C "$build" -k 0 -j "$jobs" >> "$compile_log" 2>&1 || true
+	others="$(grep '^FAILED:' "$compile_log" | grep -vc 'libOSMesa' || true)"
+	if [ "$others" != 0 ]; then
+		grep -A20 '^FAILED:' "$compile_log" | grep -v libOSMesa | head -40 >&2
+		echo "mesa: the build failed ($others failed steps besides the osmesa library; $compile_log)" >&2
+		exit 1
+	fi
+	echo "mesa: only the osmesa shared library did not link, as expected"
+fi
 
 target_o="$(find "$build/src/gallium/targets/osmesa" -name 'target.c.o' 2>/dev/null | head -1)"
 archives="$(find "$build" -name '*.a' 2>/dev/null | wc -l)"

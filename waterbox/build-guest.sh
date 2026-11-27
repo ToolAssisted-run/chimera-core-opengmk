@@ -70,6 +70,10 @@ gcc -c -specs "$sr/lib/musl-gcc.specs" -mcmodel=large -fno-pic -fno-pie -fno-sta
 # is forced into the link.
 mesa_target="$(find "$mesa/src/gallium/targets/osmesa" -name 'target.c.o' | head -1)"
 mesa_archives="$(find "$mesa" -name '*.a' | sort | tr '\n' ' ')"
+# llvmpipe: LLVM (build-llvm.sh guest) and what LLVM asks the dynamic loader for
+llvm_archives="$(ls "$root"/build/llvm-guest/lib/libLLVM*.a | sort | tr '\n' ' ')"
+gcc -c -specs "$sr/lib/musl-gcc.specs" -mcmodel=large -mno-red-zone -mstack-protector-guard=global \
+	-fno-stack-protector -fno-pic -fno-pie -fcf-protection=none -O2 -o "$out/jit-symbols.o" "$here/jit-symbols.c"
 
 exports=""
 for e in Init GetLoadError SetButton SetAxis FrameAdvance IsRunning GetFrameCount \
@@ -88,8 +92,9 @@ g++ -specs "$sr/lib/musl-gcc.specs" -mcmodel=large -fno-pic -fno-pie -fno-stack-
 	-Wl,-u,pthread_cond_wait -Wl,-u,pthread_cond_broadcast \
 	-o "$out/core.wbx" \
 	"$mbc/source/guest/cxxglue.c.o" "$mbc/source/guest/emulibc.c.o" \
-	"$out/guest-syscalls.o" "$out/libgcc-builtins.o" \
-	"$mesa_target" -Wl,--start-group "$lib" $mesa_archives -Wl,--end-group \
+	"$out/guest-syscalls.o" "$out/libgcc-builtins.o" "$out/jit-symbols.o" \
+	-Wl,--wrap=dlopen -Wl,--wrap=dlsym -Wl,--wrap=dlclose \
+	"$mesa_target" -Wl,--start-group "$lib" $mesa_archives $llvm_archives -Wl,--end-group \
 	-L"$sr/lib" -lstdc++ -lgcc -lgcc_eh -lc -lm
 # where the code reads its thread pointer, listed in the image: an Intel Mac
 # rewrites those reads as the core loads (miniBox's wbx-tp-rewrite.py)
