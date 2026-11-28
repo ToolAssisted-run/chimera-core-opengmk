@@ -62,7 +62,7 @@ jobs:
         # engine, chimera-run and its window) by tools/ci-chimera.sh.
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends meson ninja-build build-essential cmake pkg-config python3 bison flex python3-mako python3-packaging ffmpeg libgl1-mesa-dev libx11-dev libxext-dev libasound2-dev
+          sudo apt-get install -y --no-install-recommends meson ninja-build build-essential cmake pkg-config python3 bison flex python3-mako python3-packaging curl xz-utils patch ffmpeg libgl1-mesa-dev libx11-dev libxext-dev libasound2-dev
 
       - name: "Rust (nightly: the guest needs -Z build-std, and the reference is built with the same)"
         run: |
@@ -87,13 +87,19 @@ jobs:
           [ -f "$mb/build/meson-cpp/build.ninja" ] || meson setup "$mb/build/meson-cpp" "$mb" -Dguest_cpp=true
           meson compile -C "$mb/build/meson-cpp"
 
-      - name: Cache Mesa (both flavors)
-        # setup-mesa.sh pins the release by SHA256 and its options are in the
-        # script, so the script IS the key.
+      - name: Cache LLVM and Mesa (both flavors)
+        # LLVM (for llvmpipe, the software OpenGL) and Mesa take most of an
+        # hour to build on a runner and change only with their scripts, so the
+        # scripts and the Mesa patch are the key. build/deps holds the source
+        # tarballs, each checked by its SHA-256.
         uses: actions/cache@v4
         with:
-          path: build/mesa
-          key: mesa-24.0.9-${{ runner.os }}-${{ hashFiles('waterbox/setup-mesa.sh') }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/.git') }}
+          path: |
+            build/llvm-native
+            build/llvm-guest
+            build/mesa
+            build/deps
+          key: llvm-mesa-${{ runner.os }}-${{ hashFiles('waterbox/build-llvm.sh', 'waterbox/guest-toolchain.cmake', 'waterbox/setup-mesa.sh', 'waterbox/mesa-patches/*') }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/.git') }}
 
       - name: Build and install the core package
         # The commit is the core's authoritative version: this build is the one
@@ -101,6 +107,7 @@ jobs:
         # cite. A package built by hand stamps "+local" instead.
         env:
           CORE_VERSION: ${{ github.sha }}
+        # (it builds LLVM and the guest Mesa first when the cache has none)
         run: ./waterbox/build-package.sh -m "$PWD/chimera-checkout/extern/chimera-common-minibox" -r "$PWD/chimera-checkout"
 
       - name: Run the test script

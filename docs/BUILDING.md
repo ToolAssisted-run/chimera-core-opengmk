@@ -22,10 +22,15 @@
 ./waterbox/build-package.sh -m <minibox> -r <chimera>
 ```
 
-1. `setup-mesa.sh -m <minibox>` builds Mesa 24.0.9 (pinned by SHA-256) as
-   softpipe behind OSMesa, once for the guest (`build/mesa/build-guest2`).
-   `setup-mesa.sh -n` builds the host flavor the native reference uses. About
-   fifteen minutes each.
+1. `build-llvm.sh native` and `build-llvm.sh guest -m <minibox>` build LLVM
+   18.1.8 (pinned by SHA-256; the X86 target only, no threads, static) for the
+   host and for the guest; the guest's is built for size. About fifteen
+   minutes each on a small machine. `setup-mesa.sh -m <minibox>` builds Mesa
+   24.0.9 (pinned by SHA-256) as llvmpipe behind OSMesa, once for the guest
+   (`build/mesa/build-guest2`); `setup-mesa.sh -n` builds the host flavor the
+   native reference uses. A patch (`mesa-patches/0001`) tells llvmpipe of one
+   baseline x86-64 CPU. Mesa takes a few minutes each; CI caches LLVM and
+   Mesa (`build/llvm-*`, `build/mesa`, `build/deps`).
 2. `apply-patches.sh` applies `patches/` to `extern/OpenGMK`. Idempotent; stops
    on a tree that is partly patched.
 3. `build-guest.sh -m <minibox>` runs `cargo +nightly build --release` in

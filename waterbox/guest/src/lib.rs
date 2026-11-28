@@ -1,6 +1,6 @@
 //! The OpenGMK core: the exports the Chimera engine calls, over OpenGMK's
 //! GameMaker 8 runner (extern/OpenGMK, patched: no window, no sound device,
-//! Mesa's softpipe for the picture) driven one step of the game at a time.
+//! Mesa's llvmpipe for the picture) driven one step of the game at a time.
 //!
 //! The same code is the native reference: waterbox/run-native links this crate
 //! for the host and calls these functions in the order the engine does, so the

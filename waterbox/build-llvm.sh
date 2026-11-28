@@ -10,7 +10,9 @@
 # libraries. Both flavours are built WITHOUT CET (-fcf-protection=none): LLVM
 # puts endbr64 into the code it generates when it was itself compiled with
 # CET, and the code both flavours generate must be the same bytes (learnt in
-# chimera-core-rpcs3, whose build-llvm.sh this follows).
+# chimera-core-rpcs3, whose build-llvm.sh this follows). The guest's is built for
+# size, the host's for speed: the optimisation level of LLVM itself does not
+# change the code it generates.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -83,10 +85,19 @@ case "$flavour" in
 			-DLLVM_INCLUDE_UTILS=OFF -DLLVM_INCLUDE_TOOLS=OFF -DLLVM_BUILD_TOOLS=OFF \
 			-DLLVM_TABLEGEN="$native/bin/llvm-tblgen" -DLLVM_NATIVE_TOOL_DIR="$native/bin" \
 			-DLLVM_HOST_TRIPLE=x86_64-linux-musl -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-linux-musl \
-			-DCMAKE_CROSSCOMPILING=ON -DHAVE_LIBPTHREAD=ON
+			-DCMAKE_CROSSCOMPILING=ON -DHAVE_LIBPTHREAD=ON \
+			-DCMAKE_C_FLAGS_RELEASE="-Os -DNDEBUG" -DCMAKE_CXX_FLAGS_RELEASE="-Os -DNDEBUG"
 		# the libraries only: LLVM's own programs are not for the sandbox
 		# shellcheck disable=SC2046
 		ninja -C "$out" -j "$jobs" $(ninja -C "$out" -t targets all | sed -n 's/^\(lib\/libLLVM[^:]*\.a\): .*/\1/p')
+		# The guest's LLVM is built for size (-Os): the core.wbx is a fifth smaller, and
+		# the code it makes is the same (a compiler's own optimisation level does not
+		# change what it generates; the pictures were compared). Two libraries, the
+		# disassemblers, which Mesa reaches only for debug dumps, are the exception:
+		# GNU ld 2.42 refuses their -Os objects ("invalid string offset ... .strtab"), so
+		# they are compiled again at -O2.
+		(cd "$out" && ninja -t commands lib/libLLVMMCDisassembler.a lib/libLLVMX86Disassembler.a \
+			| grep -E 'MCDisassembler\.dir|X86Disassembler\.dir' | sed 's/ -Os / -O2 /' | sh)
 		;;
 esac
 touch "$out/.chimera-built"

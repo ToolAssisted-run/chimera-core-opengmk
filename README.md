@@ -12,7 +12,8 @@ earlier session exported. The core carries no game.
 - One step of the game is one row of a movie. The game's date starts at a
   setting and runs with the steps, `randomize()` takes its seed from the core's
   own sequence (a setting), and nothing reads the host's clock.
-- The picture is drawn by Mesa's softpipe inside the core, the sound mixed by
+- The picture is drawn by Mesa's llvmpipe inside the core (one baseline x86-64
+  CPU on every computer, so the same picture everywhere), the sound mixed by
   OpenGMK's own mixer a step at a time, and the files a game writes (its
   `ini` and text files) live in the machine: savestates carry them, Export Save
   Data takes them out, a save-data slot puts them back.

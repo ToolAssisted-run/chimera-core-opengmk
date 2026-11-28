@@ -1,7 +1,8 @@
 #!/bin/sh
 # Builds the OpenGMK waterbox core package and installs it into a chimera
 # checkout as build/Cores/opengmk.chimeraCore. Everything it needs it builds:
-# the guest Mesa (setup-mesa.sh) and the core (build-guest.sh).
+# LLVM (build-llvm.sh), the guest Mesa (setup-mesa.sh) and the core
+# (build-guest.sh).
 #
 # A package is core.wbx (fixed name) + waterbox.config + default_keybinds.json
 # + file_slots.json, loaded through chimera's one built-in generic adapter.
@@ -32,6 +33,8 @@ chimera_root="$(cd "$chimera_root" && pwd)"
 
 mb="$(cd "$mb" && pwd)"
 # the OpenGL the core draws with, then the core (build-guest.sh runs check-wbx)
+bash "$here/build-llvm.sh" native
+bash "$here/build-llvm.sh" guest -m "$mb"
 bash "$here/setup-mesa.sh" -m "$mb"
 bash "$here/build-guest.sh" -m "$mb"
 

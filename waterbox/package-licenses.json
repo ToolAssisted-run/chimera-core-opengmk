@@ -2,7 +2,7 @@
   "package": "opengmk",
   "effectiveTerms": "GPL-2.0-only",
   "commercialUse": "allowed under the licences of its parts (the GNU General Public License version 2: whoever passes the package on must also give out its source, and this repository and the sources linked here are that)",
-  "note": "The core is OpenGMK (GPL-2.0-only) built with this repository's patches (GPL-2.0-only, being changes to OpenGMK's own files and two small stand-in crates) and this repository's integration (MIT, which the GPL-2.0-only whole may include). Compiled in: Mesa's softpipe and OSMesa (MIT), udon's mixer and sound readers (GPL-2.0-only, carried in patches/ without its audio devices), and OpenGMK's Rust dependencies, each taken under its MIT, BSD, Zlib, Unlicense or CC0 option where it offers one (no dependency is Apache-2.0 only; gl_generator, which is, runs only when OpenGMK is built and is not in the package). The core also CARRIES, as data OpenGMK embeds, the default font GameMaker games draw text with (arimo.dat, a GameMaker 8 export of the Arimo font) and the particle shapes OpenGMK draws. It carries no game: the player brings their own GameMaker 8 .exe.",
+  "note": "The core is OpenGMK (GPL-2.0-only) built with this repository's patches (GPL-2.0-only, being changes to OpenGMK's own files and two small stand-in crates) and this repository's integration (MIT, which the GPL-2.0-only whole may include). Compiled in: Mesa's llvmpipe and OSMesa (MIT) with LLVM 18.1.8 (Apache-2.0 with the LLVM exception), which llvmpipe compiles the game's shaders with, udon's mixer and sound readers (GPL-2.0-only, carried in patches/ without its audio devices), and OpenGMK's Rust dependencies, each taken under its MIT, BSD, Zlib, Unlicense or CC0 option where it offers one (no dependency is Apache-2.0 only; gl_generator, which is, runs only when OpenGMK is built and is not in the package). The core also CARRIES, as data OpenGMK embeds, the default font GameMaker games draw text with (arimo.dat, a GameMaker 8 export of the Arimo font) and the particle shapes OpenGMK draws. It carries no game: the player brings their own GameMaker 8 .exe.",
   "components": [
     {
       "name": "chimera-core-opengmk (integration)",
@@ -32,11 +32,19 @@
       "url": "https://fonts.google.com/specimen/Arimo"
     },
     {
-      "name": "Mesa (softpipe + OSMesa, the core's OpenGL)",
+      "name": "Mesa (llvmpipe + OSMesa, the core's OpenGL)",
       "license": "MIT",
       "url": "https://gitlab.freedesktop.org/mesa/mesa",
       "version": "24.0.9",
       "sourceUrl": "https://archive.mesa3d.org/mesa-24.0.9.tar.xz"
+    },
+    {
+      "name": "LLVM (the compiler llvmpipe makes the shaders' code with)",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "url": "https://github.com/llvm/llvm-project",
+      "version": "18.1.8",
+      "file": "waterbox/licenses/LLVM-LICENSE.TXT",
+      "sourceUrl": "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz"
     },
     {
       "name": "libm (the C library's maths, from Rust)",

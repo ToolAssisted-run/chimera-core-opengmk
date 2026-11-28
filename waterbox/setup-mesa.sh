@@ -3,11 +3,11 @@
 # the gallium OSMesa front end - twice, from one pinned tarball with one set
 # of options: once cross-built for the miniBox guest, once for the host.
 #
-# Godot's Compatibility renderer draws with OpenGL 3.3, and there is no GPU
-# inside a sandbox, so the core brings its own OpenGL. llvmpipe turns each
-# shader into machine code with LLVM (build-llvm.sh), where softpipe, the
-# other software driver, interprets it pixel by pixel and was most of every
-# frame's time. llvmpipe is told of one CPU on every computer (patch
+# OpenGMK draws a game with OpenGL 3.3 shaders, and there is no GPU inside a
+# sandbox, so the core brings its own OpenGL. llvmpipe turns each shader into
+# machine code with LLVM (build-llvm.sh), where softpipe, the other software
+# driver, interprets it pixel by pixel; on Sonic.exe Nightmare Beginning that
+# was 90 percent of every step (issue 665), and llvmpipe is 8 times as fast. llvmpipe is told of one CPU on every computer (patch
 # mesa-patches/0001: an x86-64 with SSE2, one processor), so the code it
 # makes, and every picture, is the same everywhere, and it starts no threads.
 #
@@ -125,7 +125,10 @@ else
 	meson="$venv/bin/meson"
 fi
 
-# softpipe + gallium OSMesa, no LLVM, nothing that pulls a host lib.
+# llvmpipe (and softpipe, which GALLIUM_DRIVER=softpipe picks on the host for
+# comparing) + gallium OSMesa with LLVM, nothing that pulls a host lib.
+# -Dshader-cache=disabled: Mesa's on-disk cache of compiled shaders would make
+# the native reference write to the host's ~/.cache/mesa_shader_cache.
 # -Dshared-glapi=disabled is ESSENTIAL for the guest: otherwise
 # _glapi_tls_Context lands only in a .so this core cannot link. zlib/expat are
 # vendored via wraps.

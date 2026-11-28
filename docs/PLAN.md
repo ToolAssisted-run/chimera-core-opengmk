@@ -35,8 +35,9 @@ package's declarations, and runs on a game made here).
   recording videos) and the data is read on one thread. (4) The host's time
   zone: the date is UTC.
 - **Where does the picture come from?** An OpenGL renderer drawn by Mesa's
-  softpipe compiled into the core (the second way in porting-a-core.md).
-  OpenGMK needs OpenGL 3.3; softpipe behind OSMesa gives a 3.3 compatibility
+  llvmpipe (softpipe until 2026-11-28: see "Drawing with llvmpipe") compiled
+  into the core (the second way in porting-a-core.md).
+  OpenGMK needs OpenGL 3.3; the software driver behind OSMesa gives a 3.3 compatibility
   context, which its shaders accept. The picture is read from OSMesa's buffer,
   so it is the same on every host. The GPU bridge is not used (and would put a
   game's textures outside the savestate).
@@ -255,6 +256,82 @@ assertions) for both flavours: 1.2 to 1.4 times as many steps a second, the
 same picture (digests at steps 500, 600 and 700, native and sandbox, equal to
 the build before). Nothing that would change the picture was changed; the
 options measured are in issue 665.
+
+## Drawing with llvmpipe (user-decided, 2026-11-28, issue 665)
+
+The owner chose to draw with Mesa's llvmpipe, which turns each shader into
+machine code with LLVM, instead of softpipe, which interprets it. Chimera's
+Godot, Ikemen GO and Supermodel cores draw this way already; this core uses
+their recipe (Mesa 24.0.9, LLVM 18.1.8, `waterbox/build-llvm.sh`,
+`waterbox/mesa-patches/0001`, `waterbox/jit-symbols.c`).
+
+Measured on Sonic.exe Nightmare Beginning, the same 700 steps of input, one
+pinned core of a machine with a load of about 1 (steps a second):
+
+| steps | softpipe native | softpipe sandbox | llvmpipe native | llvmpipe sandbox |
+|---|---|---|---|---|
+| 200 to 400 | 85 to 126 | 85 to 124 | 556 to 483 | 550 to 365 |
+| 500 to 600 | 17.1 | 16.9 | 138 | 136 |
+| 600 to 700 | 8.8 | 8.7 | 73.1 | 73.0 |
+
+The game asks for 60. (The 2.5 to 3.5 steps a second of the issue were
+measured on a machine under a load of 340; the proportion, 8.4 times, is the
+same.) Starting the game takes about 11 s in the sandbox and 4.5 s natively,
+as before.
+
+What was decided and checked:
+
+- **One picture on every computer.** Mesa is told of one baseline x86-64 CPU
+  (SSE2, 128-bit vectors, one processor) and LLVM generates code for
+  "x86-64" whatever the computer is. No AVX2 setting (the owner, 2026-11-28).
+  Built without that, the same Mesa on this machine drew another picture at 53
+  of 71 checkpoints; with it, every run is the same. `LP_NUM_THREADS` and
+  `LP_NATIVE_VECTOR_WIDTH` change nothing in the pinned build. Only one CPU
+  model (an AMD) was tried; the sandbox does not use the host's maths library
+  and agrees with the native reference to the pixel.
+- **Savestates and determinism.** Checkpoints every 10 steps over 700 steps
+  (and every 50 over 1500) are the same native and sandbox, run to run, with a
+  save and load before every step, and with the host torn down and rebuilt
+  half way. The compiled shader code is in the machine's memory, so it is
+  saved and restored. A state is 23 MB instead of 18 MB (1.5 MB instead of
+  0.45 MB compressed).
+- **Machine spec 3.** The core declares `__wbx_machine_spec = 3`
+  (`waterbox/guest-syscalls.cpp`). LLVM's code generator maps memory with a
+  bare address hint; under spec 2 miniBox takes that as a fixed address even
+  over memory in use (the same cause as Supermodel's first-frame crash);
+  under spec 3 it puts it elsewhere. Pictures and speed are the same under
+  both here; the declaration is a safety.
+- **Mesa's shader cache is off** (`-Dshader-cache=disabled`). llvmpipe's
+  cache wrote compiled shaders to `~/.cache/mesa_shader_cache` from the native
+  reference, a file written on the host.
+- **The pictures change once.** llvmpipe's picture is close to softpipe's (on
+  screenshots at steps 100 to 700, 53 to 2130 of 1,228,800 bytes differ) but
+  not equal, so a movie recorded with the softpipe core must be played again
+  from the start to see the same pictures; the game's own state and its steps
+  do not change. No test stores a softpipe picture: the test script's checks
+  compare two runs.
+- **Size.** Package 10.5 MB with softpipe, 35.1 MB with LLVM built for speed,
+  26.5 MB with the sandbox's LLVM built for size (`-Os`; core.wbx without debug
+  sections 46 MB, 114 MB, 95 MB). LLVM's own optimisation level does not
+  change the code it generates: the pictures are equal and the speed is equal
+  (73.0 steps a second). Two libraries, LLVM's disassemblers (Mesa uses them
+  only for debug dumps), are built at `-O2`, because GNU ld 2.42 refuses their
+  `-Os` objects. `-ffunction-sections` with `--gc-sections` was tried and
+  gave the same ld error; it is not used.
+- **Build.** `build-llvm.sh native` and `guest` run before `setup-mesa.sh`
+  (`build-package.sh` and `run-gate.sh` do it); each LLVM takes a few minutes
+  on a machine with 64 jobs and about fifteen on a small one. CI caches
+  `build/llvm-native`, `build/llvm-guest`, `build/mesa` and `build/deps`,
+  keyed by the scripts and the Mesa patch. The package is one x86-64 guest
+  for Windows, Linux and macOS: only Linux builds it (CI has one job), so
+  there is nothing LLVM or Mesa to build for the other two.
+- **Licence.** LLVM (Apache-2.0 with the LLVM exception) is in
+  `package-licenses.json` and its licence text in `waterbox/licenses/`.
+- **Not proved.** Windows and macOS (the same package; macOS cannot map memory
+  writable and executable at once, and the sandbox gives a page RW or RX
+  there, which is how LLVM's loader uses it; not run), a second CPU model,
+  aarch64 (the core ships for x86-64 only; llvmpipe's CPU pin is an x86
+  patch), and any game other than Sonic.exe Nightmare Beginning.
 
 ## A game given as a zip (2026-11-26, issue 646; the way chosen by the owner, 2026-11-26)
 

@@ -62,6 +62,8 @@ report() {
 # ------------------------------------------------------------------ building
 if [ "$rebuild" = 1 ]; then
 	echo "building (the logs are in $work/)"
+	bash "$here/build-llvm.sh" native -j "$jobs" > "$work/build-llvm-native.log" 2>&1 &&
+	bash "$here/build-llvm.sh" guest -m "$minibox" -j "$jobs" > "$work/build-llvm-guest.log" 2>&1 &&
 	bash "$here/setup-mesa.sh" -n -j "$jobs" > "$work/build-mesa-native.log" 2>&1 &&
 	bash "$here/setup-mesa.sh" -m "$minibox" -j "$jobs" > "$work/build-mesa-guest.log" 2>&1 &&
 	# the reference needs the patched tree too, and on a fresh clone it is
