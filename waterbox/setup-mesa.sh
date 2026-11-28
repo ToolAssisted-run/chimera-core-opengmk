@@ -206,7 +206,9 @@ fi
 [ "${MESA_BUILD_CONFIGURE_ONLY:-}" = 1 ] && { echo "mesa: configured OK (configure-only)"; exit 0; }
 
 # Mesa's final shared osmesa .so fails to link for the guest (__dso_handle,
-# -fno-pic, large model) - EXPECTED. The guest links the static archives plus
+# -fno-pic, large model; at -O3 also __popcountdi2, which the guest build gets
+# from libgcc when it links the archives) - EXPECTED, and the host flavour is
+# not affected (its .so links). The guest links the static archives plus
 # the target's own object, both built before that step, so the .so failure is
 # tolerated there and the artifacts that are actually needed are checked.
 "$meson" compile -C "$build" -j "$jobs" || [ "$native" = 0 ]

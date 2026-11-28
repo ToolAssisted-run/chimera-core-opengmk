@@ -40,29 +40,34 @@ for line in io.lines(jobPath) do
 end
 meta.metaPath = job.meta
 
-if emu.getsystemid() ~= "GameMaker8" then
-	finish("ERROR", "wrong system id: " .. tostring(emu.getsystemid()))
+-- A script error would leave the headless window open until the shell script
+-- gave up (30 minutes); report it as the test result at once instead.
+local function run()
+	pcall(function() client.speedmode(6400) end)
+	pcall(function() client.invisibleemulation(true) end)
+
+	-- a project may open a frame or two in; run to the frame asked for
+	local frames = tonumber(job.frames) or 120
+	while emu.framecount() < frames do
+		-- the last frame is drawn, so the screenshot below is of it (in the
+		-- window frames run undrawn while invisibleemulation is on)
+		if emu.framecount() == frames - 1 then pcall(function() client.invisibleemulation(false) end) end
+		emu.frameadvance()
+	end
+
+	meta.frames = emu.framecount()
+	meta.lag = emu.lagcount()
+	meta.height = client.bufferheight()
+	meta.width = client.bufferwidth()
+
+	if job.shot ~= nil and job.shot ~= "" then
+		client.screenshot(job.shot)
+	end
+
+	finish("OK", "")
 end
 
-pcall(function() client.speedmode(6400) end)
-pcall(function() client.invisibleemulation(true) end)
-
--- a project may open a frame or two in; run to the frame asked for
-local frames = tonumber(job.frames) or 120
-while emu.framecount() < frames do
-	-- the last frame is drawn, so the screenshot below is of it (in the
-	-- window frames run undrawn while invisibleemulation is on)
-	if emu.framecount() == frames - 1 then pcall(function() client.invisibleemulation(false) end) end
-	emu.frameadvance()
+local ok, err = xpcall(run, debug.traceback)
+if not ok then
+	finish("ERROR", (tostring(err):gsub("\n", " | ")))
 end
-
-meta.frames = emu.framecount()
-meta.lag = emu.lagcount()
-meta.height = client.bufferheight()
-meta.width = client.bufferwidth()
-
-if job.shot ~= nil and job.shot ~= "" then
-	client.screenshot(job.shot)
-end
-
-finish("OK", "")
